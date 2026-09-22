@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "marketero-2",
+  "compatibility_date": "2026-09-22",
+  "pages_build_output_dir": "dist",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "marketero-db",
+      "database_id": "REPLACE_AFTER_CREATING_D1"
+    }
+  ]
+}
