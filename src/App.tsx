@@ -85,8 +85,168 @@ function CalendarPage(){
  return <main className="page"><header className="page-title"><div><span className="eyebrow">CALENDARIO</span><h1>Lavoro + Personale</h1><p>Un solo motore di disponibilità, due contesti distinti.</p></div></header><div className="chips">{(['Tutto','Lavoro','Personale'] as const).map(x=><Chip active={filter===x} onClick={()=>setFilter(x)} key={x}>{x}</Chip>)}</div><div className="calendar-list">{visible.map(e=><Card key={e.id} className={e.kind==='Personale'?'personal':''}><div className="time">{new Date(e.startAt).toLocaleDateString('it-IT',{weekday:'short',day:'numeric'})}<strong>{new Date(e.startAt).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})}</strong></div><div><h3>{e.title}</h3><p>{e.kind} · {e.category}</p></div></Card>)}</div>{!visible.length&&<Empty title="Calendario libero"/>}</main>
 }
 
-function MorePage(){ const settings=useLiveQuery(()=>db.settings.get('settings'),[]) ; const fileRef=async()=>{const p=await exportAll();downloadText(`marketero-backup-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(p,null,2),'application/json')}; return <main className="page"><header className="page-title"><div><span className="eyebrow">ALTRO</span><h1>Impostazioni</h1></div></header><div className="bento"><Card><span className="eyebrow">BACKUP</span><h3>I tuoi dati, portabili.</h3><PrimaryButton onClick={fileRef}>Esporta backup</PrimaryButton><label className="file-btn">Ripristina backup<input type="file" accept="application/json" onChange={async e=>{const f=e.target.files?.[0]; if(f) await importAll(JSON.parse(await f.text())); location.reload();}}/></label></Card><Card><span className="eyebrow">SYNC</span><h3>iPhone ↔ Desktop</h3><p className="muted">Funziona localmente anche senza sync.</p><PrimaryButton onClick={async()=>alert((await syncRemote()).ok?'Sincronizzazione completata':'Sync non configurato')}>Sincronizza ora</PrimaryButton></Card><Card><span className="eyebrow">SICUREZZA</span><h3>PIN personale</h3><p>Il codice 0000 avvia il reset del PIN e non viene usato come chiave del Vault.</p></Card><Card><span className="eyebrow">TEMA</span><button className="btn ghost" onClick={()=>settings&&db.settings.update('settings',{darkMode:!settings.darkMode,updatedAt:now()})}>{settings?.darkMode?'Usa tema chiaro':'Usa tema scuro'}</button></Card></div></main> }
+function MorePage(){
+  const settings=useLiveQuery(()=>db.settings.get('settings'),[]);
+  const [syncCode,setSyncCodeState]=useState('');
+  const [newSyncCode,setNewSyncCode]=useState('');
+  const [syncMessage,setSyncMessage]=useState('');
 
+  useEffect(()=>{
+    getSyncCode().then(code=>setSyncCodeState(code));
+  },[]);
+
+  const fileRef=async()=>{
+    const p=await exportAll();
+    downloadText(
+      `marketero-backup-${new Date().toISOString().slice(0,10)}.json`,
+      JSON.stringify(p,null,2),
+      'application/json'
+    );
+  };
+
+  async function copySyncCode(){
+    const code=await getSyncCode();
+    await navigator.clipboard.writeText(code);
+    setSyncCodeState(code);
+    setSyncMessage('Codice copiato ✓');
+  }
+
+  async function connectDevice(){
+    if(!newSyncCode.trim()){
+      setSyncMessage('Inserisci il codice del dispositivo principale.');
+      return;
+    }
+
+    try{
+      await setSyncCode(newSyncCode.trim());
+      setSyncCodeState(newSyncCode.trim());
+      await syncRemote();
+      setSyncMessage('Dispositivo collegato ✓');
+
+      setTimeout(()=>{
+        location.reload();
+      },800);
+    }catch{
+      setSyncMessage('Impossibile collegare il dispositivo.');
+    }
+  }
+
+  return <main className="page">
+    <header className="page-title">
+      <div>
+        <span className="eyebrow">ALTRO</span>
+        <h1>Impostazioni</h1>
+      </div>
+    </header>
+
+    <div className="bento">
+
+      <Card>
+        <span className="eyebrow">SYNC</span>
+        <h3>iPhone ↔ Desktop</h3>
+
+        <p className="muted">
+          Collega i dispositivi una sola volta. Poi la sincronizzazione sarà automatica.
+        </p>
+
+        <label>
+          Codice di questo dispositivo
+          <input
+            readOnly
+            value={syncCode}
+            placeholder="Generazione codice..."
+          />
+        </label>
+
+        <PrimaryButton onClick={copySyncCode}>
+          Copia codice
+        </PrimaryButton>
+
+        <div style={{height:16}} />
+
+        <label>
+          Collega questo dispositivo
+          <input
+            value={newSyncCode}
+            onChange={e=>setNewSyncCode(e.target.value)}
+            placeholder="Incolla il codice dell'altro dispositivo"
+          />
+        </label>
+
+        <PrimaryButton onClick={connectDevice}>
+          Collega dispositivo
+        </PrimaryButton>
+
+        <div style={{height:12}} />
+
+        <button
+          className="btn ghost"
+          onClick={async()=>{
+            try{
+              await syncRemote();
+              setSyncMessage('Sincronizzazione completata ✓');
+            }catch{
+              setSyncMessage('Sincronizzazione non riuscita');
+            }
+          }}
+        >
+          Sincronizza ora
+        </button>
+
+        {syncMessage&&<p className="muted">{syncMessage}</p>}
+      </Card>
+
+      <Card>
+        <span className="eyebrow">BACKUP</span>
+        <h3>I tuoi dati, portabili.</h3>
+
+        <PrimaryButton onClick={fileRef}>
+          Esporta backup
+        </PrimaryButton>
+
+        <label className="file-btn">
+          Ripristina backup
+          <input
+            type="file"
+            accept="application/json"
+            onChange={async e=>{
+              const f=e.target.files?.[0];
+              if(f){
+                await importAll(JSON.parse(await f.text()));
+                location.reload();
+              }
+            }}
+          />
+        </label>
+      </Card>
+
+      <Card>
+        <span className="eyebrow">SICUREZZA</span>
+        <h3>PIN personale</h3>
+        <p>
+          Il codice 0000 avvia il reset del PIN e non viene usato come chiave del Vault.
+        </p>
+      </Card>
+
+      <Card>
+        <span className="eyebrow">TEMA</span>
+
+        <button
+          className="btn ghost"
+          onClick={()=>
+            settings&&db.settings.update('settings',{
+              darkMode:!settings.darkMode,
+              updatedAt:now()
+            })
+          }
+        >
+          {settings?.darkMode?'Usa tema chiaro':'Usa tema scuro'}
+        </button>
+      </Card>
+
+    </div>
+  </main>
+}
 function IdeaForm({close}:{close:()=>void}){ const clients=useLiveQuery(()=>db.clients.toArray(),[])||[]; const [title,setTitle]=useState(''); const [clientId,setClientId]=useState(''); const [platform,setPlatform]=useState<Platform>('Instagram'); const [format,setFormat]=useState<ContentFormat>('Reel'); const [url,setUrl]=useState(''); async function save(e:any){e.preventDefault(); const t=now(); await db.ideas.put({id:uid(),title,clientId:clientId||undefined,platform,format,referenceUrls:url?[{url}]:[],status:'Idea',createdAt:t,updatedAt:t});close()} return <Modal title="Nuova idea" close={close}><form onSubmit={save} className="form"><label>Titolo<input required value={title} onChange={e=>setTitle(e.target.value)}/></label><label>Cliente<select value={clientId} onChange={e=>setClientId(e.target.value)}><option value="">Nessuno</option>{clients.map(c=><option value={c.id} key={c.id}>{c.name}</option>)}</select></label><FieldChips title="Piattaforma" values={['Instagram','TikTok','Entrambi']} value={platform} setValue={setPlatform}/><FieldChips title="Formato" values={['Reel','TikTok Video','Post','Carousel','Story']} value={format} setValue={setFormat}/><label>URL riferimento<input type="url" placeholder="https://..." value={url} onChange={e=>setUrl(e.target.value)}/></label><PrimaryButton type="submit">Salva idea</PrimaryButton></form></Modal> }
 
 function ClientForm({close,after}:{close:()=>void;after:(id:string)=>void}){ const [step,setStep]=useState(1); const [v,setV]=useState({name:'',niche:'Ristorante',description:'',instagram:'',tiktok:'',monthlyFee:0,contentTarget:10,metaAds:false,objective:'',tone:'Diretto e professionale'}); async function save(){const id=uid(),t=now();await db.clients.put({id,name:v.name,niche:v.niche,description:v.description,instagram:v.instagram,tiktok:v.tiktok,monthlyFee:Number(v.monthlyFee),contentTarget:Number(v.contentTarget),metaAds:v.metaAds,objective:v.objective,tone:v.tone,avoid:[],platforms:[...(v.instagram?['Instagram' as Platform]:[]),...(v.tiktok?['TikTok' as Platform]:[])],createdAt:t,updatedAt:t});close();after(id)} return <Modal title={`Nuovo cliente · ${step}/4`} close={close}><div className="progress"><span style={{width:`${step*25}%`}}/></div><div className="form">{step===1&&<><label>Nome<input value={v.name} onChange={e=>setV({...v,name:e.target.value})}/></label><label>Nicchia<select value={v.niche} onChange={e=>setV({...v,niche:e.target.value})}>{['Ristorante','Abbigliamento','Concessionaria','Beauty','Fitness','Immobiliare','Hospitality','Retail','Professionista','Dentista','Bar','Formazione','Servizi','E-commerce','Altro'].map(x=><option key={x}>{x}</option>)}</select></label><label>Descrizione<textarea value={v.description} onChange={e=>setV({...v,description:e.target.value})}/></label></>}{step===2&&<><label>Instagram<input value={v.instagram} onChange={e=>setV({...v,instagram:e.target.value})}/></label><label>TikTok<input value={v.tiktok} onChange={e=>setV({...v,tiktok:e.target.value})}/></label></>}{step===3&&<><label>Compenso mensile<input type="number" value={v.monthlyFee} onChange={e=>setV({...v,monthlyFee:+e.target.value})}/></label><label className="check"><input type="checkbox" checked={v.metaAds} onChange={e=>setV({...v,metaAds:e.target.checked})}/> Meta Ads</label></>}{step===4&&<><label>Target contenuti/mese<input type="number" value={v.contentTarget} onChange={e=>setV({...v,contentTarget:+e.target.value})}/></label><label>Obiettivo<input value={v.objective} onChange={e=>setV({...v,objective:e.target.value})}/></label><label>Tono di voce<input value={v.tone} onChange={e=>setV({...v,tone:e.target.value})}/></label></>}<div className="row spread sticky-actions">{step>1?<button className="btn ghost" onClick={()=>setStep(step-1)}>Indietro</button>:<span/>}{step<4?<PrimaryButton onClick={()=>setStep(step+1)}>Continua</PrimaryButton>:<PrimaryButton disabled={!v.name} onClick={save}>Crea cliente</PrimaryButton>}</div></div></Modal> }
