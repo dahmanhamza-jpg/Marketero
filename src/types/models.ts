@@ -33,6 +33,8 @@ export interface CalendarEvent extends BaseEntity {
 export interface Lead extends BaseEntity {
   name: string; contact?: string; email?: string; phone?: string; monthlyValue: number;
   status: 'Da contattare' | 'Contattato' | 'Appuntamento' | 'Proposta inviata' | 'Acquisito' | 'Perso';
+  contacted?: boolean;
+  outcome?: 'OK' | 'NO' | 'Da richiamare';
   lastContactAt?: string; nextFollowUpAt?: string; notes?: string;
 }
 export interface Payment extends BaseEntity { clientId: string; amount: number; dueDate: string; paidAt?: string; note?: string; }
