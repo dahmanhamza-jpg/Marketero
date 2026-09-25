@@ -20,6 +20,7 @@ export interface Script extends BaseEntity {
   clientId: string; ideaId?: string; title: string; platform: Platform; format: ContentFormat;
   status: ScriptStatus; hook?: string; body?: string; cta?: string; recordingNotes?: string;
   estimatedSeconds?: number; onCamera?: string; referenceUrls: { url: string; note?: string }[];
+  recorded?: boolean; edited?: boolean; scheduled?: boolean; published?: boolean;
 }
 export interface Task extends BaseEntity {
   clientId?: string; title: string; dueAt?: string; durationMin: number; urgent: boolean; completed: boolean;
@@ -34,15 +35,22 @@ export interface Lead extends BaseEntity {
   status: 'Da contattare' | 'Contattato' | 'Appuntamento' | 'Proposta inviata' | 'Acquisito' | 'Perso';
   lastContactAt?: string; nextFollowUpAt?: string; notes?: string;
 }
-export interface Payment extends BaseEntity {
-  clientId: string; amount: number; dueDate: string; paidAt?: string; note?: string;
-}
+export interface Payment extends BaseEntity { clientId: string; amount: number; dueDate: string; paidAt?: string; note?: string; }
 export interface FollowerSnapshot extends BaseEntity { clientId: string; platform: 'Instagram'|'TikTok'; date: string; count: number; }
 export interface Strategy extends BaseEntity {
   clientId: string; objective: string; summary: string; target: number;
   pillars: { name: string; count: number }[];
   ideas: { title: string; pillar: string; platform: Platform; format: ContentFormat; hook: string; cta: string; funnel: 'Discovery'|'Trust'|'Action' }[];
   approved: boolean;
+}
+export interface FocusSession extends BaseEntity {
+  plannedMinutes: number; completedMinutes: number; startedAt: string; endedAt: string;
+  taskId?: string; scriptId?: string; workflowStage?: 'Registrazione'|'Montaggio'|'Programmazione'|'Pubblicato'; label?: string;
+}
+export interface Habit extends BaseEntity { name: string; archived?: boolean; }
+export interface HabitCompletion extends BaseEntity { habitId: string; date: string; completed: boolean; }
+export interface RewardEntry extends BaseEntity {
+  actionKey: string; points: number; source: 'task'|'script'|'workflow'|'focus'|'habit'; label?: string;
 }
 export interface Settings extends BaseEntity {
   key: 'singleton'; pinHash?: string; firstRunDone: boolean; monthlyRevenueGoal: number; clientGoal: number;
