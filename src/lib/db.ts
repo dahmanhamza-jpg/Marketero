@@ -20,6 +20,9 @@ export const uid = () => crypto.randomUUID();
 export const now = () => new Date().toISOString();
 export async function ensureSettings(){
   let s = await db.settings.get('settings');
-  if(!s){ s={id:'settings',key:'singleton',createdAt:now(),updatedAt:now(),firstRunDone:false,monthlyRevenueGoal:5000,clientGoal:10,energy:'Media',darkMode:false}; await db.settings.put(s); }
+  if(!s){
+    s={id:'settings',key:'singleton',createdAt:now(),updatedAt:now(),firstRunDone:false,monthlyRevenueGoal:5000,clientGoal:10,darkMode:false,dateFormat:'it-IT',notificationsEnabled:true,clientReminders:true,appointmentReminders:true,autoLockMinutes:15};
+    await db.settings.put(s);
+  }
   return s;
 }
