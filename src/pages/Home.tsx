@@ -1,0 +1,27 @@
+import { Link } from 'react-router-dom';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { useState } from 'react';
+import { db, now } from '../lib/db';
+import { clientDeadlineAlerts, clientDeadlinesBetween, clientHealth, dateOnly, freeMinutesUntil, greetingForHour, localDate, nextTask, paymentStatus } from '../lib/logic';
+import { dailyMotivation } from '../lib/motivation';
+import { fmtDate, inputDate } from '../lib/ui';
+import { queueSync } from '../services/sync';
+import { Card, PrimaryButton } from '../components/UI';
+
+export function Home(){
+ const tasks=useLiveQuery(()=>db.tasks.toArray(),[])||[];const events=useLiveQuery(()=>db.events.toArray(),[])||[];const clients=useLiveQuery(()=>db.clients.toArray(),[])||[];const payments=useLiveQuery(()=>db.payments.toArray(),[])||[];const scripts=useLiveQuery(()=>db.scripts.toArray(),[])||[];const [selectedDate,setSelectedDate]=useState(inputDate());
+ const future=events.filter(e=>localDate(e.startAt)>new Date()&&!e.deletedAt&&!e.allDay).sort((a,b)=>+localDate(a.startAt)-+localDate(b.startAt));const free=freeMinutesUntil(future);const next=nextTask(tasks,free);const nextEvent=future[0];const alerts=clients.map(c=>({c,h:clientHealth(c,payments,scripts)})).filter(x=>x.h.state!=='Regolare').slice(0,2);const deadlineAlerts=clientDeadlineAlerts(clients,events).slice(0,2);const focus=[...tasks].filter(t=>!t.completed&&!t.deletedAt).sort((a,b)=>(b.urgent?1:0)-(a.urgent?1:0)).slice(0,3);const motivations=dailyMotivation();
+ const selected=new Date(`${selectedDate}T12:00:00`);const dayEvents=events.filter(e=>!e.deletedAt&&dateOnly(e.startAt)===selectedDate);const dayTasks=tasks.filter(t=>!t.deletedAt&&t.dueAt&&dateOnly(t.dueAt)===selectedDate);const dayDeadlines=clients.flatMap(c=>clientDeadlinesBetween(c,selected,selected).map(d=>({client:c,date:d})));
+ const dayItems=[...dayEvents.map(e=>({id:e.id,title:e.title,meta:e.allDay?'Senza orario':new Date(e.startAt).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})})),...dayTasks.map(t=>({id:t.id,title:t.title,meta:t.stage||'Task'})),...dayDeadlines.map(x=>({id:`deadline-${x.client.id}`,title:`Scadenza ciclo · ${x.client.name}`,meta:'Cliente'}))];
+ return <main className="page home"><header className="top"><div><h1>{greetingForHour()} 👋</h1><p>{new Intl.DateTimeFormat('it-IT',{weekday:'long',day:'numeric',month:'long'}).format(new Date())}</p></div></header>
+ <Card className="hero"><div className="hero-glow"/><span className="eyebrow light">⚡ ADESSO</span>{next?<><h2>{next.title}</h2><p>{next.durationMin} min · {next.urgent?'Priorità alta':'Miglior prossima azione'}</p><div className="row"><PrimaryButton onClick={()=>{db.tasks.update(next.id,{completed:true,updatedAt:now()});queueSync()}}>✓ Completa</PrimaryButton></div></>:<><h2>Sei in pari.</h2><p>Non ci sono attività urgenti compatibili con il tempo disponibile.</p></>}</Card>
+ <div className="motivation-grid">{motivations.map((m,i)=><Card key={i} className="motivation-card"><span className="quote-type">{m.type}</span><p>“{m.text}”</p>{m.reference&&<small>{m.reference}</small>}</Card>)}</div>
+ <div className="day-strip">{Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()+i);const key=inputDate(d);return <button className={selectedDate===key?'selected':''} key={key} onClick={()=>setSelectedDate(key)}><span>{new Intl.DateTimeFormat('it-IT',{weekday:'short'}).format(d)}</span><strong>{d.getDate()}</strong></button>})}</div>
+ <Card className="day-agenda"><div className="section-head compact"><div><h3>{fmtDate(selected,{weekday:'long',day:'numeric',month:'long'})}</h3><p>Impegni e scadenze</p></div></div>{dayItems.length?dayItems.map(x=><div className="agenda-row" key={x.id}><strong>{x.title}</strong><span>{x.meta}</span></div>):<p className="muted">Nessun impegno per questa giornata.</p>}</Card>
+ <div className="bento"><Card className="span2"><span className="eyebrow">🎯 FOCUS</span>{focus.length?focus.map(t=><div className="line" key={t.id}><span>{t.title}</span><button onClick={()=>{db.tasks.update(t.id,{completed:true,updatedAt:now()});queueSync()}}>✓</button></div>):<p className="muted">Nessuna priorità aperta.</p>}</Card>
+ <Card><span className="eyebrow">📅 PROSSIMO</span><h3>{nextEvent?.title||'Nessun appuntamento'}</h3>{nextEvent&&<p>{new Date(nextEvent.startAt).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})} · {nextEvent.kind}</p>}</Card>
+ <Card><span className="eyebrow">✨ TEMPO LIBERO</span><h3>{free>=60?`${Math.floor(free/60)}h ${free%60}m`:`${free} min`}</h3><p>Prima del prossimo impegno</p></Card>
+ {deadlineAlerts.map(a=><Card className="attention" key={a.client.id}><span className="eyebrow">⏳ CICLO CLIENTE</span><p><strong>{a.client.name}</strong><br/>{a.message}</p></Card>)}{alerts.map(x=><Card className="attention" key={x.c.id}><span className="eyebrow">🚨 ATTENZIONE</span><p><strong>{x.c.name}</strong><br/>{x.h.reason}</p></Card>)}
+ <Link to="/pagamenti" className="card-link"><Card><span className="eyebrow">💰 DA INCASSARE</span><h3>€ {payments.filter(p=>paymentStatus(p)!=='Pagato'&&!p.deletedAt).reduce((s,p)=>s+p.amount,0).toLocaleString('it-IT')}</h3><p>{payments.filter(p=>paymentStatus(p)==='Scaduto'&&!p.deletedAt).length} scaduti · Apri entrate →</p></Card></Link>
+ <Card><span className="eyebrow">🔥 MOMENTUM</span><h3>{tasks.filter(t=>t.completed&&!t.deletedAt).length}</h3><p>attività completate</p></Card></div></main>;
+}
