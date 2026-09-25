@@ -3,11 +3,10 @@ import { CalendarPlus, CircleDollarSign, FileText, Lightbulb, ListTodo, Plus, Sp
 
 const actions=[
   {key:'client',title:'Cliente',desc:'Crea una nuova scheda',icon:Users,tone:'orange'},
-  {key:'work',title:'Appuntamento',desc:'Blocca tempo di lavoro',icon:CalendarPlus,tone:'dark'},
+  {key:'appointment',title:'Appuntamento',desc:'Scegli lavoro o personale',icon:CalendarPlus,tone:'dark'},
   {key:'task',title:'Task',desc:'Aggiungi una cosa da fare',icon:ListTodo,tone:'warm'},
   {key:'lead',title:'Lead',desc:'Salva un potenziale cliente',icon:UserPlus,tone:'neutral'},
   {key:'script',title:'Script',desc:'Inizia un nuovo contenuto',icon:FileText,tone:'orange'},
-  {key:'personal',title:'Personale',desc:'Proteggi un impegno privato',icon:Users,tone:'dark'},
   {key:'idea',title:'Idea',desc:'Cattura uno spunto',icon:Lightbulb,tone:'light'},
   {key:'payment',title:'Pagamento',desc:'Registra una scadenza',icon:CircleDollarSign,tone:'neutral'},
   {key:'content',title:'Produzione',desc:'Aggiungi attività contenuto',icon:Sparkles,tone:'warm'}
