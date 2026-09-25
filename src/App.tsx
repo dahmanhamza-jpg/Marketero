@@ -9,9 +9,9 @@ import {
   exportAll,
   importAll,
   syncRemote,
-  startAutoSync,
-  getSyncCode,
-  setSyncCode
+ startAutoSync,
+getSyncCode,
+setSyncCode
 } from './services/sync';
 import { downloadText, scriptText } from './lib/exportScript';
 import { BottomNav } from './components/BottomNav';
