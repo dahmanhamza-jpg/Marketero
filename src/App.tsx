@@ -56,7 +56,7 @@ function Home(){
   const free=freeMinutesUntil(future);
   const next=nextTask(tasks,free);
   const nextEvent=future[0];
-  const alerts=clients.map(c=>({c,h:clientHealth(c,payments,[]),d:nextClientDeadline(c)})).filter(x=>{const due=x.d&&[10,7,3,0].includes(daysUntil(x.d));const planned=x.d&&events.some(e=>e.clientId===x.c.id&&!e.deletedAt&&e.category.toLowerCase().includes('registr')&&new Date(e.startAt)>=x.d);return x.h.state!=='Regolare'||(due&&!planned)}).slice(0,3);
+  const alerts=clients.map(c=>({c,h:clientHealth(c,payments,[]),d:nextClientDeadline(c)})).filter(x=>{const deadline=x.d;const due=!!deadline&&[10,7,3,0].includes(daysUntil(deadline));const planned=!!deadline&&events.some(e=>e.clientId===x.c.id&&!e.deletedAt&&e.category.toLowerCase().includes('registr')&&new Date(e.startAt)>=deadline);return x.h.state!=='Regolare'||(due&&!planned)}).slice(0,3);
   const focus=tasks.filter(t=>!t.completed&&!t.deletedAt).sort((a,b)=>(b.urgent?1:0)-(a.urgent?1:0)).slice(0,3);
   const quotes=dailyMotivation();
   async function completeTask(id:string){await db.tasks.update(id,{completed:true,updatedAt:now()});queueSync();}
