@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, now } from '../lib/db';
 import { verifyPin, makePinHash } from '../lib/security';
-import { exportAll, getSyncCode, importAll, queueSync, resetRemote, setSyncCode } from '../services/sync';
+import { exportAll, getSyncCode, importAll, pairWithSyncCode, queueSync, resetRemote } from '../services/sync';
 import { downloadText } from '../lib/exportScript';
 import { Card, PrimaryButton } from '../components/UI';
 import { Modal } from '../components/Forms';
@@ -13,7 +13,7 @@ export function SettingsPage(){
  useEffect(()=>{getSyncCode().then(setSyncCodeState)},[]);
  const fileRef=async()=>{const p=await exportAll();downloadText(`marketero-backup-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(p,null,2),'application/json')};
  async function copySyncCode(){const code=await getSyncCode();await navigator.clipboard.writeText(code);setSyncMessage('Codice copiato ✓')}
- async function connectDevice(){if(!newSyncCode.trim()){setSyncMessage('Inserisci il codice del dispositivo principale.');return}const old=await getSyncCode();try{const code=newSyncCode.trim().toLowerCase();await setSyncCode(code);setSyncCodeState(code);setNewSyncCode('');setSyncMessage('Dispositivo collegato. La sincronizzazione è automatica ✓');queueSync()}catch(error:any){await setSyncCode(old).catch(()=>{});setSyncMessage('Errore: '+(error?.message||'Impossibile collegare il dispositivo'))}}
+ async function connectDevice(){if(!newSyncCode.trim()){setSyncMessage('Inserisci il codice del dispositivo principale.');return}try{const code=newSyncCode.trim().toLowerCase();await pairWithSyncCode(code);setSyncCodeState(code);setNewSyncCode('');setSyncMessage('Dispositivo collegato. La sincronizzazione è automatica ✓')}catch(error:any){setSyncMessage('Errore: '+(error?.message||'Impossibile collegare il dispositivo'))}}
  return <main className="page"><header className="page-title"><div><h1>Impostazioni</h1><p>Solo controlli utili per app, sicurezza e dati.</p></div></header><div className="settings-grid">
  <Card><h3>App</h3><label className="setting-field">Nome<input value={settings?.userName||''} placeholder="Il tuo nome" onChange={e=>settings&&db.settings.update('settings',{userName:e.target.value,updatedAt:now()})} onBlur={queueSync}/></label><button className="btn ghost" onClick={()=>settings&&db.settings.update('settings',{darkMode:!settings.darkMode,updatedAt:now()}).then(()=>queueSync())}>{settings?.darkMode?'Usa tema chiaro':'Usa tema scuro'}</button></Card>
  <Card><h3>Sicurezza</h3><p className="muted">PIN sincronizzato tra i dispositivi collegati. Il codice di recupero non viene mostrato nell’app.</p><ChangePin/></Card>
