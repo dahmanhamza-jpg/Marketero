@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, ensureSettings } from './lib/db';
 import { startAutoSync } from './services/sync';
+import { startNotificationChecks } from './services/notifications';
 import { BottomNav } from './components/BottomNav';
 import { QuickAdd } from './components/QuickAdd';
 import { LockGate } from './components/LockGate';
@@ -16,6 +17,7 @@ import './styles.css';
 
 function AppShell(){
  const nav=useNavigate();const [modal,setModal]=useState<string|null>(null);
+ useEffect(()=>{const stop=startNotificationChecks();return stop},[]);
  return <div className="app-shell"><Routes>
   <Route path="/" element={<Home/>}/>
   <Route path="/clienti" element={<Clients/>}/>
