@@ -10,7 +10,12 @@ import { exportAll, importAll, resetRemote, startAutoSync, getSyncCode, setSyncC
 import { downloadText, scriptText } from './lib/exportScript';
 import { BottomNav } from './components/BottomNav';
 import { QuickAdd } from './components/QuickAdd';
-import { Card, Chip, Empty, PrimaryButton } from './components/UI';
+import { Card, Chip, Empty, PrimaryButton, ProgressRing, Stat } from './components/UI';
+import { WorkflowBoard } from './components/WorkflowBoard';
+import { FocusPage } from './features/FocusPage';
+import { HabitsPage } from './features/HabitsPage';
+import { award, levelFor, rewardTotal } from './lib/rewards';
+import { workflowSummary } from './lib/workflow';
 import type { CalendarEvent, Client, ContentFormat, Idea, Lead, Payment, Platform, Script, Task, WorkflowStage } from './types/models';
 import './styles.css';
 
@@ -28,6 +33,8 @@ function AppShell(){
     <Route path="/clienti" element={<Clients/>}/>
     <Route path="/clienti/:id" element={<ClientPage/>}/>
     <Route path="/calendario" element={<CalendarPage/>}/>
+    <Route path="/focus" element={<FocusPage/>}/>
+    <Route path="/abitudini" element={<HabitsPage/>}/>
     <Route path="/pagamenti" element={<PaymentsPage/>}/>
     <Route path="/lead" element={<LeadsPage/>}/>
     <Route path="/altro" element={<MorePage/>}/>
@@ -51,6 +58,8 @@ function Home(){
   const events=useLiveQuery(()=>db.events.toArray(),[])||[];
   const clients=useLiveQuery(()=>db.clients.toArray(),[])||[];
   const payments=useLiveQuery(()=>db.payments.toArray(),[])||[];
+  const scripts=useLiveQuery(()=>db.scripts.toArray(),[])||[];
+  const rewards=useLiveQuery(()=>db.rewards.toArray(),[])||[];
   const [selectedDay,setSelectedDay]=useState<Date|null>(null);
   const future=events.filter(e=>new Date(e.startAt)>new Date()&&!e.deletedAt).sort((a,b)=>+new Date(a.startAt)-+new Date(b.startAt));
   const free=freeMinutesUntil(future);
@@ -59,9 +68,11 @@ function Home(){
   const alerts=clients.map(c=>({c,h:clientHealth(c,payments,[]),d:nextClientDeadline(c)})).filter(x=>{const deadline=x.d;const due=!!deadline&&[10,7,3,0].includes(daysUntil(deadline));const planned=!!deadline&&events.some(e=>e.clientId===x.c.id&&!e.deletedAt&&e.category.toLowerCase().includes('registr')&&new Date(e.startAt)>=deadline);return x.h.state!=='Regolare'||(due&&!planned)}).slice(0,3);
   const focus=tasks.filter(t=>!t.completed&&!t.deletedAt).sort((a,b)=>(b.urgent?1:0)-(a.urgent?1:0)).slice(0,3);
   const quotes=dailyMotivation();
-  async function completeTask(id:string){await db.tasks.update(id,{completed:true,updatedAt:now()});queueSync();}
+  const points=rewardTotal(rewards); const level=levelFor(points);
+  const activeClientProgress=clients.filter(c=>!c.deletedAt).map(c=>({client:c,summary:workflowSummary(scripts.filter(x=>x.clientId===c.id))})).sort((a,b)=>a.summary.progress-b.summary.progress).slice(0,3);
+  async function completeTask(id:string){await db.tasks.update(id,{completed:true,updatedAt:now()});await award('task:'+id,5,'task','Task completato');queueSync();}
   return <main className="page home"><header className="top"><div><h1>{greeting()} 👋</h1><p>{new Intl.DateTimeFormat('it-IT',{weekday:'long',day:'numeric',month:'long'}).format(new Date())}</p></div></header>
-    <Card className="hero"><div className="hero-glow"/><span className="eyebrow light">⚡ ADESSO</span>{next?<><h2>{next.title}</h2><p>{next.durationMin} min · {next.urgent?'Priorità alta':'Miglior prossima azione'}</p><div className="row"><PrimaryButton onClick={()=>completeTask(next.id)}>✓ Completa</PrimaryButton></div></>:<><h2>Sei in pari.</h2><p>Non ci sono attività urgenti compatibili con il tempo disponibile.</p></>}</Card>
+    <Card className="hero"><div className="hero-glow"/><span className="eyebrow light">PROSSIMA AZIONE</span>{next?<><h2>{next.title}</h2><p>{next.durationMin} min · {next.urgent?'Priorità alta':'Scelta dai dati di oggi'}</p><div className="row"><Link className="btn primary" to={'/focus?task='+next.id+'&label='+encodeURIComponent(next.title)}>Inizia Focus</Link><button className="btn hero-quiet" onClick={()=>completeTask(next.id)}>✓ Completa</button></div></>:<><h2>Spazio libero.</h2><p>Non ci sono attività urgenti compatibili con il tempo disponibile.</p><Link className="btn primary" to="/focus">Avvia Focus libero</Link></>}</Card>
     <div className="day-strip">{Array.from({length:5},(_,i)=>{const d=new Date();d.setDate(d.getDate()+i);return <button className={i===0?'selected':''} key={i} onClick={()=>setSelectedDay(new Date(d))}><span>{new Intl.DateTimeFormat('it-IT',{weekday:'short'}).format(d)}</span><strong>{d.getDate()}</strong></button>})}</div>
     <div className="quote-grid">{quotes.map((q,i)=><Card key={i} className="quote-card"><span className="quote-type">{q.type}</span><blockquote>{q.text}</blockquote>{q.reference&&<small>{q.reference}</small>}</Card>)}</div>
     <div className="bento">
@@ -70,7 +81,10 @@ function Home(){
       <Card><span className="eyebrow">✨ TEMPO LIBERO</span><h3>{free>=60?`${Math.floor(free/60)}h ${free%60}m`:`${free} min`}</h3><p>Prima del prossimo impegno</p></Card>
       {alerts.length>0&&<Card className="attention span2"><span className="eyebrow">🚨 ATTENZIONE</span>{alerts.map(x=><p key={x.c.id}><strong>{x.c.name}</strong><br/>{x.d&&[10,7,3,0].includes(daysUntil(x.d))?`Tra ${Math.max(0,daysUntil(x.d))} giorni termina il ciclo contenuti. Pianifica la registrazione del mese successivo.`:x.h.reason}</p>)}</Card>}
       <LinkCard to="/pagamenti" title="💰 DA INCASSARE" value={`€ ${payments.filter(p=>paymentStatus(p)!=='Pagato').reduce((s,p)=>s+p.amount,0).toLocaleString('it-IT')}`} note={`${payments.filter(p=>paymentStatus(p)==='Scaduto').length} scaduti`}/>
-      <Card><span className="eyebrow">🔥 MOMENTUM</span><h3>{tasks.filter(t=>t.completed).length}</h3><p>attività completate</p></Card>
+      <Link to="/focus" className="card card-link focus-mini"><span className="eyebrow">FOCUS</span><h3>25:00</h3><p>Avvia una sessione protetta</p></Link>
+      <Card className="dopamine-mini"><span className="eyebrow">DOPAMINA · PUNTI</span><h3>{points}</h3><p>Livello {level.level} · {level.name}</p><div className="mini-progress"><span style={{width:Math.min(100,Math.round(level.current/level.needed*100))+'%'}}/></div></Card>
+      {activeClientProgress.length>0&&<Card className="span2 client-progress-home"><span className="eyebrow">AVANZAMENTO CLIENTI</span>{activeClientProgress.map(x=><Link to={'/clienti/'+x.client.id} key={x.client.id}><div><b>{x.client.name}</b><small>{x.summary.total} script</small></div><strong>{x.summary.progress}%</strong></Link>)}</Card>}
+      <Link to="/abitudini" className="card card-link"><span className="eyebrow">ABITUDINI</span><h3>14 giorni</h3><p>Continuità senza streak punitive</p></Link>
     </div>
     {selectedDay&&<DaySheet date={selectedDay} close={()=>setSelectedDay(null)} events={events} tasks={tasks} clients={clients}/>}
   </main>
