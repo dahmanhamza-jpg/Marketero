@@ -8,7 +8,7 @@ async function show(title:string,body:string,tag:string){
  const day=new Date().toISOString().slice(0,10);const key=`marketero-notify:${day}:${tag}`;
  if(localStorage.getItem(key))return;
  const reg=await navigator.serviceWorker.ready;
- await reg.showNotification(title,{body,tag,icon:'/icons/icon-192.png',badge:'/icons/icon-192.png'});
+ await reg.showNotification(title,{body,tag,icon:'/icon.svg'});
  localStorage.setItem(key,'1');
 }
 export async function checkNotifications(){
