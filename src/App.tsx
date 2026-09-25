@@ -170,7 +170,7 @@ function CalendarPage(){
   const deadlines=clients.flatMap(c=>clientDeadlinesInRange(c,monthStart,monthEnd).map(d=>({client:c,date:d})));
   const monthLabel=new Intl.DateTimeFormat('it-IT',{month:'long',year:'numeric'}).format(cursor);
   function shift(delta:number){const d=new Date(cursor);if(mode==='Mese')d.setMonth(d.getMonth()+delta);else if(mode==='Settimana')d.setDate(d.getDate()+7*delta);else d.setDate(d.getDate()+delta);setCursor(d)}
-  return <main className="page calendar-page">
+  return <main className={"page calendar-page "+(mode==="Mese"?"calendar-month-mode":"")}>
     <header className="calendar-hero">
       <div><span className="eyebrow">TEMPO E PRIORITÀ</span><h1>La tua settimana</h1><p>Vedi subito dove sei pieno e dove hai spazio.</p></div>
       <PrimaryButton onClick={()=>setCreating(true)}>+ Evento</PrimaryButton>
