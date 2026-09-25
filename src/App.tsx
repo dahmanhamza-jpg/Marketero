@@ -5,7 +5,12 @@ import { db, ensureSettings, now, uid } from './lib/db';
 import { makePinHash, RECOVERY_CODE, verifyPin } from './lib/security';
 import { clientHealth, freeMinutesUntil, getConflicts, nextTask, paymentStatus } from './lib/logic';
 import { buildStrategy } from './services/strategy';
-import { exportAll, importAll, syncRemote } from './services/sync';
+import {
+  exportAll,
+  importAll,
+  syncRemote,
+  startAutoSync
+} from './services/sync';
 import { downloadText, scriptText } from './lib/exportScript';
 import { BottomNav } from './components/BottomNav';
 import { QuickAdd } from './components/QuickAdd';
@@ -14,7 +19,14 @@ import type { CalendarEvent, Client, ContentFormat, Idea, Platform, Script, Task
 import './styles.css';
 
 function AppShell(){
-  const nav=useNavigate(); const [modal,setModal]=useState<string|null>(null);
+  const nav=useNavigate();
+  const [modal,setModal]=useState<string|null>(null);
+
+  useEffect(() => {
+    const stop = startAutoSync();
+    return stop;
+  }, []);
+
   return <div className="app-shell"><Routes>
     <Route path="/" element={<Home/>}/><Route path="/clienti" element={<Clients/>}/><Route path="/clienti/:id" element={<ClientPage/>}/><Route path="/calendario" element={<CalendarPage/>}/><Route path="/altro" element={<MorePage/>}/>
   </Routes><BottomNav/><QuickAdd onSelect={v=>setModal(v)}/>{modal&&<QuickModal type={modal} close={()=>setModal(null)} nav={nav}/>}</div>
