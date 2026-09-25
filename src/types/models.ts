@@ -1,7 +1,7 @@
 export type Platform = 'Instagram' | 'TikTok' | 'Entrambi';
 export type ContentFormat = 'Reel' | 'TikTok Video' | 'Post' | 'Carousel' | 'Story';
 export type ScriptStatus = 'Da scrivere' | 'In corso' | 'Pronto';
-export type WorkflowStage = 'Script' | 'Registrazione' | 'Montaggio' | 'Programmazione' | 'Pubblicato';
+export type WorkflowStage = 'Lead' | 'Script' | 'Registrazione' | 'Montaggio' | 'Programmazione' | 'Pubblicato';
 export type ClientHealth = 'Regolare' | 'Attenzione' | 'Critico';
 export type EventKind = 'Lavoro' | 'Personale';
 
@@ -23,10 +23,11 @@ export interface Script extends BaseEntity {
 }
 export interface Task extends BaseEntity {
   clientId?: string; title: string; dueAt?: string; durationMin: number; urgent: boolean; completed: boolean;
-  stage?: WorkflowStage; energy?: 'Bassa' | 'Media' | 'Alta'; notes?: string;
+  stage?: WorkflowStage; notes?: string;
 }
 export interface CalendarEvent extends BaseEntity {
-  clientId?: string; title: string; kind: EventKind; category: string; startAt: string; endAt: string; notes?: string;
+  clientId?: string; title: string; kind: EventKind; category: string; startAt: string;
+  endAt?: string; allDay?: boolean; notes?: string;
 }
 export interface Lead extends BaseEntity {
   name: string; contact?: string; email?: string; phone?: string; monthlyValue: number;
@@ -45,5 +46,7 @@ export interface Strategy extends BaseEntity {
 }
 export interface Settings extends BaseEntity {
   key: 'singleton'; pinHash?: string; firstRunDone: boolean; monthlyRevenueGoal: number; clientGoal: number;
-  energy: 'Bassa'|'Media'|'Alta'; darkMode: boolean; syncToken?: string;
+  darkMode: boolean; syncToken?: string; profileName?: string; dateFormat?: 'it-IT';
+  notificationsEnabled?: boolean; clientReminders?: boolean; appointmentReminders?: boolean;
+  autoLockMinutes?: number; lastSyncAt?: string;
 }
