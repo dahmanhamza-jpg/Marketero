@@ -1,6 +1,6 @@
 import { db } from '../lib/db';
 
-const entityTables = ['clients','ideas','scripts','tasks','events','leads','payments','followers','strategies'] as const;
+const entityTables = ['clients','ideas','scripts','tasks','events','leads','payments','followers','strategies','focusSessions','habits','habitCompletions','rewards'] as const;
 const SYNC_CODE_RE=/^[a-f0-9]{64}$/;
 let syncing=false;
 let queued:number|undefined;
@@ -22,14 +22,14 @@ export async function setSyncCode(code:string){
   await db.settings.update('settings',{syncToken:clean,updatedAt:new Date().toISOString()});
 }
 export async function exportAll(){
-  const out:any={schemaVersion:2,exportDate:new Date().toISOString(),data:{}};
+  const out:any={schemaVersion:3,exportDate:new Date().toISOString(),data:{}};
   for(const t of entityTables) out.data[t]=await (db as any)[t].toArray();
   const settings=await db.settings.get('settings');
   out.data.settings=settings?[{...settings,syncToken:undefined}]:[];
   return out;
 }
 export async function importAll(payload:any){
-  if(![1,2].includes(payload?.schemaVersion)||!payload.data) throw new Error('Dati di sincronizzazione non validi');
+  if(![1,2,3].includes(payload?.schemaVersion)||!payload.data) throw new Error('Dati di sincronizzazione non validi');
   for(const t of entityTables) if(Array.isArray(payload.data[t])) await (db as any)[t].bulkPut(payload.data[t]);
   const remote=payload.data.settings?.[0];
   if(remote){
@@ -44,29 +44,21 @@ export async function syncRemote(){
     const token=await ensureSyncToken();
     const payload=await exportAll();
     let r:Response;
-    try{
-      r=await fetch('/api/sync',{method:'POST',headers:{'content-type':'application/json','authorization':`Bearer ${token}`},body:JSON.stringify(payload)});
-    }catch{ throw new Error('Nessuna connessione al server di sincronizzazione'); }
-    if(!r.ok){ const detail=(await r.text()).trim(); throw new Error(detail?`Sincronizzazione non riuscita (${r.status}): ${detail}`:`Sincronizzazione non riuscita (${r.status})`); }
+    try{r=await fetch('/api/sync',{method:'POST',headers:{'content-type':'application/json','authorization':`Bearer ${token}`},body:JSON.stringify(payload)});}
+    catch{throw new Error('Nessuna connessione al server di sincronizzazione');}
+    if(!r.ok){const detail=(await r.text()).trim();throw new Error(detail?`Sincronizzazione non riuscita (${r.status}): ${detail}`:`Sincronizzazione non riuscita (${r.status})`);}
     const merged=await r.json(); if(merged?.data) await importAll(merged);
     await db.settings.update('settings',{lastSyncAt:new Date().toISOString()});
     return {ok:true};
-  }finally{ syncing=false; }
+  }finally{syncing=false;}
 }
-export function queueSync(delay=700){
-  if(queued) window.clearTimeout(queued);
-  queued=window.setTimeout(()=>syncRemote().catch(()=>{}),delay);
-}
-export async function resetRemote(){
-  const token=await ensureSyncToken();
-  const r=await fetch('/api/sync',{method:'DELETE',headers:{'authorization':`Bearer ${token}`}});
-  if(!r.ok) throw new Error('Reset remoto non riuscito');
-}
+export function queueSync(delay=650){if(queued)window.clearTimeout(queued);queued=window.setTimeout(()=>syncRemote().catch(()=>{}),delay);}
+export async function resetRemote(){const token=await ensureSyncToken();const r=await fetch('/api/sync',{method:'DELETE',headers:{authorization:`Bearer ${token}`}});if(!r.ok)throw new Error('Reset remoto non riuscito');}
 export function startAutoSync(){
   syncRemote().catch(()=>{});
   const interval=window.setInterval(()=>syncRemote().catch(()=>{}),15000);
   const visibilityHandler=()=>{if(document.visibilityState==='visible')syncRemote().catch(()=>{});};
   const onlineHandler=()=>syncRemote().catch(()=>{});
-  document.addEventListener('visibilitychange',visibilityHandler); window.addEventListener('online',onlineHandler);
-  return ()=>{window.clearInterval(interval);document.removeEventListener('visibilitychange',visibilityHandler);window.removeEventListener('online',onlineHandler);};
+  document.addEventListener('visibilitychange',visibilityHandler);window.addEventListener('online',onlineHandler);
+  return()=>{window.clearInterval(interval);document.removeEventListener('visibilitychange',visibilityHandler);window.removeEventListener('online',onlineHandler);};
 }
