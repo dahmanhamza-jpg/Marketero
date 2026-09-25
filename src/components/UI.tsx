@@ -1,5 +1,9 @@
 import type { PropsWithChildren, ReactNode } from 'react';
-export function Card({children,className=''}:PropsWithChildren<{className?:string}>){ return <section className={`card ${className}`}>{children}</section>; }
-export function Chip({active,children,onClick}:{active?:boolean;children:ReactNode;onClick?:()=>void}){ return <button type="button" onClick={onClick} className={`chip ${active?'active':''}`}>{children}</button>; }
-export function PrimaryButton({children,onClick,type='button',disabled=false}:{children:ReactNode;onClick?:()=>void;type?:'button'|'submit';disabled?:boolean}){return <button className="btn primary" type={type} onClick={onClick} disabled={disabled}>{children}</button>}
-export function Empty({title,action}:{title:string;action?:ReactNode}){return <div className="empty"><div>✦</div><strong>{title}</strong>{action}</div>}
+export function Card({children,className=''}:PropsWithChildren<{className?:string}>){return <section className={'card '+className}>{children}</section>;}
+export function Chip({active,children,onClick}:{active?:boolean;children:ReactNode;onClick?:()=>void}){return <button type='button' onClick={onClick} className={'chip '+(active?'active':'')}>{children}</button>;}
+export function PrimaryButton({children,onClick,type='button',disabled=false,className=''}:{children:ReactNode;onClick?:()=>void;type?:'button'|'submit';disabled?:boolean;className?:string}){return <button className={'btn primary '+className} type={type} onClick={onClick} disabled={disabled}>{children}</button>;}
+export function Empty({title,description,action}:{title:string;description?:string;action?:ReactNode}){return <div className='empty'><div className='empty-mark'>✦</div><strong>{title}</strong>{description&&<p>{description}</p>}{action}</div>;}
+export function ProgressRing({value,size=92,label}:{value:number;size?:number;label?:string}){const v=Math.max(0,Math.min(100,value));return <div className='progress-ring' style={{'--p':v+'%','--s':size+'px'} as any}><div><strong>{v}%</strong>{label&&<small>{label}</small>}</div></div>;}
+export function Stat({value,label,sub}:{value:ReactNode;label:string;sub?:string}){return <div className='stat'><strong>{value}</strong><span>{label}</span>{sub&&<small>{sub}</small>}</div>;}
+export function RewardToast({points,text}:{points:number;text?:string}){return <div className='reward-toast'><b>+{points}</b><span>{text||'Dopamina'}</span></div>;}
+export function PageHeader({eyebrow,title,description,action}:{eyebrow?:string;title:string;description?:string;action?:ReactNode}){return <header className='page-title editorial-header'><div>{eyebrow&&<span className='eyebrow'>{eyebrow}</span>}<h1>{title}</h1>{description&&<p>{description}</p>}</div>{action}</header>;}
