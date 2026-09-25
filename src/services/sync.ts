@@ -9,16 +9,17 @@ const tables = [
   'leads',
   'payments',
   'followers',
-  'strategies',
-  'settings'
+  'strategies'
 ] as const;
+
+const SYNC_CODE_RE = /^[a-f0-9]{64}$/;
 
 export async function ensureSyncToken(){
   const s = await db.settings.get('settings');
 
   if(!s) throw new Error('Impostazioni mancanti');
 
-  if(s.syncToken) return s.syncToken;
+  if(s.syncToken && SYNC_CODE_RE.test(s.syncToken)) return s.syncToken;
 
   const bytes = crypto.getRandomValues(new Uint8Array(32));
 
@@ -39,10 +40,10 @@ export async function getSyncCode(){
 }
 
 export async function setSyncCode(code:string){
-  const clean = code.trim();
+  const clean = code.trim().toLowerCase();
 
-  if(!clean){
-    throw new Error('Codice sincronizzazione mancante');
+  if(!SYNC_CODE_RE.test(clean)){
+    throw new Error('Codice sincronizzazione non valido. Deve contenere 64 caratteri.');
   }
 
   const s = await db.settings.get('settings');
@@ -73,11 +74,11 @@ export async function exportAll(){
 
 export async function importAll(payload:any){
   if(payload?.schemaVersion !== 1 || !payload.data){
-    throw new Error('Backup non valido');
+    throw new Error('Dati di sincronizzazione non validi');
   }
 
   for(const t of tables){
-    if(payload.data[t]){
+    if(Array.isArray(payload.data[t])){
       await (db as any)[t].bulkPut(payload.data[t]);
     }
   }
@@ -97,17 +98,28 @@ export async function syncRemote(){
     const token = await ensureSyncToken();
     const payload = await exportAll();
 
-    const r = await fetch(endpoint,{
-      method:'POST',
-      headers:{
-        'content-type':'application/json',
-        'authorization':`Bearer ${token}`
-      },
-      body:JSON.stringify(payload)
-    });
+    let r:Response;
+
+    try{
+      r = await fetch(endpoint,{
+        method:'POST',
+        headers:{
+          'content-type':'application/json',
+          'authorization':`Bearer ${token}`
+        },
+        body:JSON.stringify(payload)
+      });
+    }catch{
+      throw new Error('Nessuna connessione al server di sincronizzazione');
+    }
 
     if(!r.ok){
-      throw new Error(`Sincronizzazione non riuscita (${r.status})`);
+      const detail = (await r.text()).trim();
+      throw new Error(
+        detail
+          ? `Sincronizzazione non riuscita (${r.status}): ${detail}`
+          : `Sincronizzazione non riuscita (${r.status})`
+      );
     }
 
     const merged = await r.json();
@@ -124,7 +136,6 @@ export async function syncRemote(){
 }
 
 export function startAutoSync(){
-
   syncRemote().catch(()=>{});
 
   const interval = window.setInterval(()=>{
