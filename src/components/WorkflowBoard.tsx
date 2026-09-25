@@ -15,7 +15,7 @@ export function WorkflowBoard({client,scripts}:{client:Client;scripts:Script[]})
   async function toggle(script:Script,key:WorkflowFlag){
     const next=!script[key];
     if(next){const missing=missingPrevious(script,key);if(missing.length)setHint(workflowMeta[key].label+' completato prima di '+missing.map(k=>workflowMeta[k].label).join(', ')+'. Stato salvato comunque.');}
-    await db.scripts.update(script.id,{[key]:next,updatedAt:now()});
+    await db.scripts.update(script.id,{[key]:next,updatedAt:now()} as any);
     if(next){const r=await award('workflow:'+script.id+':'+key,workflowMeta[key].points,'workflow',workflowMeta[key].label+' · '+script.title);if(r.awarded){setReward(r.points);window.setTimeout(()=>setReward(0),1600);}}
     queueSync();
   }
