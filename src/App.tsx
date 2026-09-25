@@ -132,24 +132,109 @@ function ClientPage(){
   </main>
 }
 
+function calendarTone(category:string,kind:'Lavoro'|'Personale'){
+  const c=category.toLowerCase();
+  if(kind==='Personale')return 'personal';
+  if(c.includes('registr'))return 'recording';
+  if(c.includes('mont'))return 'editing';
+  if(c.includes('programm'))return 'scheduling';
+  if(c.includes('pubblic'))return 'publishing';
+  if(c.includes('task'))return 'task';
+  return 'appointment';
+}
+function calendarIcon(category:string,kind:'Lavoro'|'Personale'){
+  const tone=calendarTone(category,kind);
+  return tone==='recording'?'●':tone==='editing'?'◆':tone==='scheduling'?'▣':tone==='publishing'?'✓':tone==='personal'?'○':tone==='task'?'□':'•';
+}
+
 function CalendarPage(){
-  const events=useLiveQuery(()=>db.events.toArray(),[])||[]; const clients=useLiveQuery(()=>db.clients.toArray(),[])||[];
-  const [filter,setFilter]=useState<'Tutto'|'Lavoro'|'Personale'>('Tutto'); const [mode,setMode]=useState<'Giorno'|'Settimana'|'Mese'>('Mese'); const [cursor,setCursor]=useState(new Date()); const [editing,setEditing]=useState<CalendarEvent|null>(null);
+  const events=useLiveQuery(()=>db.events.toArray(),[])||[];
+  const clients=useLiveQuery(()=>db.clients.toArray(),[])||[];
+  const [filter,setFilter]=useState<'Tutto'|'Lavoro'|'Personale'>('Tutto');
+  const [mode,setMode]=useState<'Giorno'|'Settimana'|'Mese'>('Mese');
+  const [cursor,setCursor]=useState(new Date());
+  const [editing,setEditing]=useState<CalendarEvent|null>(null);
+  const [creating,setCreating]=useState(false);
+  const [selectedDay,setSelectedDay]=useState<Date|null>(null);
   const visible=events.filter(e=>!e.deletedAt&&(filter==='Tutto'||e.kind===filter));
-  const monthStart=new Date(cursor.getFullYear(),cursor.getMonth(),1); const monthEnd=new Date(cursor.getFullYear(),cursor.getMonth()+1,0);
+  const monthStart=new Date(cursor.getFullYear(),cursor.getMonth(),1);
+  const monthEnd=new Date(cursor.getFullYear(),cursor.getMonth()+1,0);
   const deadlines=clients.flatMap(c=>clientDeadlinesInRange(c,monthStart,monthEnd).map(d=>({client:c,date:d})));
-  function shift(delta:number){const d=new Date(cursor); if(mode==='Mese')d.setMonth(d.getMonth()+delta);else if(mode==='Settimana')d.setDate(d.getDate()+7*delta);else d.setDate(d.getDate()+delta);setCursor(d)}
-  return <main className="page"><header className="page-title"><div><h1>Calendario</h1><p>Lavoro e personale nello stesso spazio, senza conflitti nascosti.</p></div></header><div className="calendar-toolbar"><div className="chips">{(['Giorno','Settimana','Mese'] as const).map(x=><Chip active={mode===x} onClick={()=>setMode(x)} key={x}>{x}</Chip>)}</div><div className="chips">{(['Tutto','Lavoro','Personale'] as const).map(x=><Chip active={filter===x} onClick={()=>setFilter(x)} key={x}>{x}</Chip>)}</div><div className="row"><button className="btn ghost" onClick={()=>shift(-1)}>←</button><button className="btn ghost" onClick={()=>setCursor(new Date())}>Oggi</button><button className="btn ghost" onClick={()=>shift(1)}>→</button></div></div>{mode==='Mese'?<MonthGrid cursor={cursor} events={visible} deadlines={deadlines} onEvent={setEditing}/>:<AgendaView mode={mode} cursor={cursor} events={visible} onEvent={setEditing}/>} {editing&&<EventForm kind={editing.kind} edit={editing} close={()=>setEditing(null)}/>}</main>
+  const monthLabel=new Intl.DateTimeFormat('it-IT',{month:'long',year:'numeric'}).format(cursor);
+  function shift(delta:number){const d=new Date(cursor);if(mode==='Mese')d.setMonth(d.getMonth()+delta);else if(mode==='Settimana')d.setDate(d.getDate()+7*delta);else d.setDate(d.getDate()+delta);setCursor(d)}
+  return <main className="page calendar-page">
+    <header className="calendar-hero">
+      <div><span className="eyebrow">TEMPO E PRIORITÀ</span><h1>La tua settimana</h1><p>Vedi subito dove sei pieno e dove hai spazio.</p></div>
+      <PrimaryButton onClick={()=>setCreating(true)}>+ Evento</PrimaryButton>
+    </header>
+    <Card className="calendar-shell">
+      <div className="calendar-titlebar">
+        <div className="month-nav"><button className="icon-btn" aria-label="Periodo precedente" onClick={()=>shift(-1)}>←</button><div><span className="eyebrow">PERIODO</span><h2>{monthLabel}</h2></div><button className="icon-btn" aria-label="Periodo successivo" onClick={()=>shift(1)}>→</button></div>
+        <div className="calendar-controls">
+          <div className="segment-control">{(['Giorno','Settimana','Mese'] as const).map(x=><button className={mode===x?'active':''} onClick={()=>setMode(x)} key={x}>{x}</button>)}</div>
+          <button className="btn today-btn" onClick={()=>setCursor(new Date())}>Oggi</button>
+        </div>
+      </div>
+      <div className="calendar-filter">{(['Tutto','Lavoro','Personale'] as const).map(x=><button className={filter===x?'active':''} onClick={()=>setFilter(x)} key={x}>{x}</button>)}</div>
+      {mode==='Mese'
+        ?<MonthGrid cursor={cursor} events={visible} deadlines={deadlines} clients={clients} onEvent={setEditing} onDay={setSelectedDay}/>
+        :<AgendaView mode={mode} cursor={cursor} events={visible} clients={clients} onEvent={setEditing}/>}
+    </Card>
+    {selectedDay&&<CalendarDaySheet date={selectedDay} events={visible} deadlines={deadlines} clients={clients} close={()=>setSelectedDay(null)} onEvent={e=>{setSelectedDay(null);setEditing(e)}}/>}
+    {editing&&<EventForm kind={editing.kind} edit={editing} close={()=>setEditing(null)}/>}
+    {creating&&<EventForm kind="Lavoro" close={()=>setCreating(false)}/>}
+  </main>
 }
 
-function MonthGrid({cursor,events,deadlines,onEvent}:{cursor:Date;events:CalendarEvent[];deadlines:{client:Client;date:Date}[];onEvent:(e:CalendarEvent)=>void}){
-  const first=new Date(cursor.getFullYear(),cursor.getMonth(),1); const start=new Date(first); start.setDate(1-((first.getDay()+6)%7)); const days=Array.from({length:42},(_,i)=>{const d=new Date(start);d.setDate(start.getDate()+i);return d});
-  return <div className="month-wrap"><div className="month-head">{['Lun','Mar','Mer','Gio','Ven','Sab','Dom'].map(x=><b key={x}>{x}</b>)}</div><div className="month-grid">{days.map(d=>{const es=events.filter(e=>sameDay(e.startAt,d));const ds=deadlines.filter(x=>sameDay(x.date,d));return <div className={`month-day ${d.getMonth()!==cursor.getMonth()?'muted-day':''}`} key={d.toISOString()}><strong>{d.getDate()}</strong><div className="month-events">{es.slice(0,4).map(e=><button key={e.id} className={`event-pill ${e.kind==='Personale'?'personal':''}`} onClick={()=>onEvent(e)}>{e.allDay?'':new Date(e.startAt).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})+' '}{e.title}</button>)}{ds.map(x=><span className="event-pill deadline" key={x.client.id}>⏳ {x.client.name}</span>)}{es.length>4&&<small>+{es.length-4} altri</small>}</div></div>})}</div></div>
+function MonthGrid({cursor,events,deadlines,clients,onEvent,onDay}:{cursor:Date;events:CalendarEvent[];deadlines:{client:Client;date:Date}[];clients:Client[];onEvent:(e:CalendarEvent)=>void;onDay:(d:Date)=>void}){
+  const first=new Date(cursor.getFullYear(),cursor.getMonth(),1);
+  const start=new Date(first);start.setDate(1-((first.getDay()+6)%7));
+  const days=Array.from({length:42},(_,i)=>{const d=new Date(start);d.setDate(start.getDate()+i);return d});
+  return <div className="month-wrap responsive-month">
+    <div className="month-head">{['Lun','Mar','Mer','Gio','Ven','Sab','Dom'].map(x=><b key={x}>{x}</b>)}</div>
+    <div className="month-grid">{days.map(d=>{
+      const es=events.filter(e=>sameDay(e.startAt,d));
+      const ds=deadlines.filter(x=>sameDay(x.date,d));
+      const busy=es.length+ds.length;
+      return <div className={'month-day '+(d.getMonth()!==cursor.getMonth()?'muted-day ':'')+(sameDay(d,new Date())?'today ':'')} key={d.toISOString()}>
+        <button className="day-number" onClick={()=>onDay(new Date(d))}><strong>{d.getDate()}</strong>{busy>0&&<span>{busy}</span>}</button>
+        <div className="month-events">
+          {es.slice(0,3).map(e=>{const client=clients.find(c=>c.id===e.clientId);return <button key={e.id} className={'event-card '+calendarTone(e.category,e.kind)} onClick={()=>onEvent(e)}>
+            <span className="event-symbol">{calendarIcon(e.category,e.kind)}</span>
+            <span className="event-copy"><b>{e.allDay?'Tutto il giorno':new Date(e.startAt).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})}</b><span>{e.title}</span>{client&&<small>{client.name}</small>}</span>
+          </button>})}
+          {ds.slice(0,1).map(x=><button className="event-card deadline" key={x.client.id} onClick={()=>onDay(new Date(d))}><span className="event-symbol">!</span><span className="event-copy"><b>Scadenza</b><span>{x.client.name}</span></span></button>)}
+          {busy>4&&<button className="more-events" onClick={()=>onDay(new Date(d))}>+{busy-4} altri</button>}
+        </div>
+      </div>
+    })}</div>
+  </div>
 }
 
-function AgendaView({mode,cursor,events,onEvent}:{mode:'Giorno'|'Settimana';cursor:Date;events:CalendarEvent[];onEvent:(e:CalendarEvent)=>void}){
-  const start=new Date(cursor); if(mode==='Settimana')start.setDate(start.getDate()-((start.getDay()+6)%7)); const end=new Date(start);end.setDate(end.getDate()+(mode==='Settimana'?6:0));end.setHours(23,59,59,999); const list=events.filter(e=>{const d=new Date(e.startAt);return d>=start&&d<=end}).sort((a,b)=>+new Date(a.startAt)-+new Date(b.startAt));
-  return <div className="calendar-list">{list.map(e=><button className="calendar-event" key={e.id} onClick={()=>onEvent(e)}><div className="time">{new Date(e.startAt).toLocaleDateString('it-IT',{weekday:'short',day:'numeric'})}<strong>{e.allDay?'—':new Date(e.startAt).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})}</strong></div><div><h3>{e.title}</h3><p>{e.kind} · {e.category}</p></div></button>)}{!list.length&&<Empty title="Calendario libero"/>}</div>
+function CalendarDaySheet({date,events,deadlines,clients,close,onEvent}:{date:Date;events:CalendarEvent[];deadlines:{client:Client;date:Date}[];clients:Client[];close:()=>void;onEvent:(e:CalendarEvent)=>void}){
+  const dayEvents=events.filter(e=>sameDay(e.startAt,date)).sort((a,b)=>+new Date(a.startAt)-+new Date(b.startAt));
+  const dayDeadlines=deadlines.filter(x=>sameDay(x.date,date));
+  return <Modal title={new Intl.DateTimeFormat('it-IT',{weekday:'long',day:'numeric',month:'long'}).format(date)} close={close}>
+    <div className="day-agenda">
+      {dayEvents.map(e=>{const client=clients.find(c=>c.id===e.clientId);return <button key={e.id} className={'day-agenda-item '+calendarTone(e.category,e.kind)} onClick={()=>onEvent(e)}>
+        <span className="agenda-time">{e.allDay?'—':new Date(e.startAt).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})}</span>
+        <span><b>{e.title}</b><small>{e.category}{client?' · '+client.name:''}</small></span>
+      </button>})}
+      {dayDeadlines.map(x=><div className="day-agenda-item deadline" key={x.client.id}><span className="agenda-time">!</span><span><b>Scadenza cliente</b><small>{x.client.name}</small></span></div>)}
+      {!dayEvents.length&&!dayDeadlines.length&&<Empty title="Giornata libera" description="Nessun impegno in calendario."/>}
+    </div>
+  </Modal>
+}
+
+function AgendaView({mode,cursor,events,clients,onEvent}:{mode:'Giorno'|'Settimana';cursor:Date;events:CalendarEvent[];clients:Client[];onEvent:(e:CalendarEvent)=>void}){
+  const start=new Date(cursor);if(mode==='Settimana')start.setDate(start.getDate()-((start.getDay()+6)%7));
+  const end=new Date(start);end.setDate(end.getDate()+(mode==='Settimana'?6:0));end.setHours(23,59,59,999);
+  const list=events.filter(e=>{const d=new Date(e.startAt);return d>=start&&d<=end}).sort((a,b)=>+new Date(a.startAt)-+new Date(b.startAt));
+  return <div className="calendar-list">{list.map(e=>{const client=clients.find(c=>c.id===e.clientId);return <button className={'calendar-event '+calendarTone(e.category,e.kind)} key={e.id} onClick={()=>onEvent(e)}>
+    <div className="time"><span>{new Date(e.startAt).toLocaleDateString('it-IT',{weekday:'short',day:'numeric'})}</span><strong>{e.allDay?'—':new Date(e.startAt).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})}</strong></div>
+    <span className="event-symbol large">{calendarIcon(e.category,e.kind)}</span>
+    <div><span className="eyebrow">{e.category}</span><h3>{e.title}</h3><p>{client?.name||e.kind}</p></div>
+  </button>})}{!list.length&&<Empty title="Calendario libero" description="Nessun impegno in questo periodo."/>}</div>
 }
 
 function PaymentsPage(){
