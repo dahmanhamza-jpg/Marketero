@@ -117,17 +117,22 @@ function MorePage(){
       return;
     }
 
+    const previousCode = await getSyncCode();
+
     try{
-      await setSyncCode(newSyncCode.trim());
-      setSyncCodeState(newSyncCode.trim());
+      const code = newSyncCode.trim().toLowerCase();
+      await setSyncCode(code);
       await syncRemote();
-      setSyncMessage('Dispositivo collegato ✓');
+      setSyncCodeState(code);
+      setNewSyncCode('');
+      setSyncMessage('Dispositivo collegato e sincronizzato ✓');
 
       setTimeout(()=>{
         location.reload();
       },800);
-    }catch{
-      setSyncMessage('Impossibile collegare il dispositivo.');
+    }catch(error:any){
+      await setSyncCode(previousCode).catch(()=>{});
+      setSyncMessage('Errore: ' + (error?.message || 'Impossibile collegare il dispositivo'));
     }
   }
 
