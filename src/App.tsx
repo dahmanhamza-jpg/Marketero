@@ -36,7 +36,7 @@ function AppShell(){
     <Route path="/focus" element={<FocusPage/>}/>
     <Route path="/abitudini" element={<HabitsPage/>}/>
     <Route path="/pagamenti" element={<PaymentsPage/>}/>
-    <Route path="/lead" element={<LeadsPage/>}/>
+    <Route path="/lead" element={<Clients/>}/>
     <Route path="/altro" element={<MorePage/>}/>
   </Routes><BottomNav/><QuickAdd onSelect={setModal}/>{modal&&<QuickModal type={modal} close={()=>setModal(null)} nav={nav}/>}</div>
 }
@@ -44,7 +44,7 @@ function AppShell(){
 function QuickModal({type,close,nav}:{type:string;close:()=>void;nav:(p:string)=>void}){
   if(type==='idea') return <IdeaForm close={close}/>;
   if(type==='client') return <ClientForm close={close} after={id=>nav('/clienti/'+id)}/>;
-  if(type==='work'||type==='personal') return <EventForm kind={type==='work'?'Lavoro':'Personale'} close={close}/>;
+  if(type==='appointment'||type==='work'||type==='personal') return <EventForm kind={type==='personal'?'Personale':'Lavoro'} close={close}/>;
   if(type==='task') return <TaskForm close={close}/>;
   if(type==='content') return <TaskForm close={close} initialStage="Registrazione" title="Nuovo contenuto / attività"/>;
   if(type==='script') return <GlobalScriptForm close={close}/>;
@@ -102,7 +102,9 @@ function Clients(){
   const clients=useLiveQuery(()=>db.clients.toArray(),[])||[];
   const payments=useLiveQuery(()=>db.payments.toArray(),[])||[];
   const scripts=useLiveQuery(()=>db.scripts.toArray(),[])||[];
+  const leads=useLiveQuery(()=>db.leads.toArray(),[])||[];
   const [newClient,setNewClient]=useState(false);
+  const [newLead,setNewLead]=useState(false);
   const nav=useNavigate();
   const nowDate=new Date();
   const monthPayments=payments.filter(p=>!p.deletedAt&&p.paidAt&&new Date(p.paidAt).getMonth()===nowDate.getMonth()&&new Date(p.paidAt).getFullYear()===nowDate.getFullYear());
@@ -110,11 +112,37 @@ function Clients(){
   const prevDate=new Date(nowDate.getFullYear(),nowDate.getMonth()-1,1);
   const prevRevenue=payments.filter(p=>!p.deletedAt&&p.paidAt&&new Date(p.paidAt).getMonth()===prevDate.getMonth()&&new Date(p.paidAt).getFullYear()===prevDate.getFullYear()).reduce((sum,p)=>sum+p.amount,0);
   const monthTrend=prevRevenue?Math.round((monthRevenue-prevRevenue)/prevRevenue*100):null;
+  async function toggleLeadContacted(lead:Lead){
+    const contacted=!(lead.contacted ?? lead.status!=='Da contattare');
+    await db.leads.update(lead.id,{contacted,lastContactAt:contacted?now():lead.lastContactAt,status:contacted?'Contattato':'Da contattare',updatedAt:now()});
+    queueSync();
+  }
+  async function setLeadOutcome(lead:Lead,outcome:Lead['outcome']){
+    const status=outcome==='OK'?'Acquisito':outcome==='NO'?'Perso':'Contattato';
+    await db.leads.update(lead.id,{outcome,contacted:true,lastContactAt:lead.lastContactAt||now(),status,updatedAt:now()});
+    queueSync();
+  }
   return <main className="page"><header className="page-title editorial-header"><div><span className="eyebrow">IN LAVORAZIONE</span><h1>I tuoi clienti</h1><p>Apri una card e capisci subito cosa manca.</p></div><PrimaryButton onClick={()=>setNewClient(true)}>+ Nuovo cliente</PrimaryButton></header><div className="client-grid">{clients.filter(c=>!c.deletedAt).map(c=>{const h=clientHealth(c,payments,scripts.filter(s=>s.clientId===c.id));const d=nextClientDeadline(c);const ws=workflowSummary(scripts.filter(s=>s.clientId===c.id));return <Link className="client-card client-card-2026" to={`/clienti/${c.id}`} key={c.id}><div className="avatar">{c.name.slice(0,2).toUpperCase()}</div><div className="client-main"><div className="row spread"><div><span className="eyebrow">{c.niche}</span><h3>{c.name}</h3></div><ProgressRing value={ws.progress} size={62}/></div><div className="client-kpis"><Stat value={ws.total} label="script"/><Stat value={ws.counts.edited} label="montati"/><Stat value={ws.counts.published} label="pubblicati"/></div>{d&&<div className="deadline-note">Scadenza <b>{fmtDate(d)}</b> · {Math.max(0,daysUntil(d))} giorni</div>}<div className="next-action">⚡ {ws.total&&ws.progress<100?'Continua il workflow':' '+h.reason}</div></div></Link>})}</div>{clients.length===0&&<Empty title="Nessun cliente ancora" description="Aggiungi il primo cliente per organizzare contenuti e scadenze." action={<PrimaryButton onClick={()=>setNewClient(true)}>Nuovo cliente</PrimaryButton>}/>}
   <Link to="/pagamenti" className="revenue-link-card">
     <div><span className="eyebrow">ENTRATE · MESE CORRENTE</span><h2>€ {monthRevenue.toLocaleString('it-IT')}</h2><p>{monthPayments.length} incassi registrati</p></div>
     <div className="revenue-link-side">{monthTrend!==null&&<span className={monthTrend>=0?'trend-up':'trend-down'}>{monthTrend>=0?'+':''}{monthTrend}%</span>}<b>Apri Entrate →</b></div>
   </Link>
+  <section className="lead-section">
+    <div className="section-head lead-section-head"><div><span className="eyebrow">POTENZIALI CLIENTI</span><h2>Lead</h2><p>Contatto ed esito aggiornabili con un tap.</p></div><PrimaryButton onClick={()=>setNewLead(true)}>+ Lead</PrimaryButton></div>
+    <div className="lead-cards">
+      {leads.filter(l=>!l.deletedAt).map(lead=>{const contacted=lead.contacted ?? lead.status!=='Da contattare';return <Card key={lead.id} className="lead-card-compact">
+        <div className="lead-main">
+          <div><span className="eyebrow">{lead.nextFollowUpAt?'RICHIAMO '+fmtDate(lead.nextFollowUpAt):'LEAD'}</span><h3>{lead.name}</h3><p>{lead.contact||lead.email||lead.phone||'Nessun contatto'}</p></div>
+          <label className="lead-check"><input type="checkbox" checked={contacted} onChange={()=>toggleLeadContacted(lead)}/><span>{contacted?'Contattato':'Da contattare'}</span></label>
+        </div>
+        <div className="lead-outcome" role="group" aria-label={'Esito '+lead.name}>
+          {(['OK','NO','Da richiamare'] as const).map(outcome=><button key={outcome} className={lead.outcome===outcome?'active':''} onClick={()=>setLeadOutcome(lead,outcome)}>{outcome}</button>)}
+        </div>
+      </Card>})}
+      {!leads.filter(l=>!l.deletedAt).length&&<Empty title="Nessun lead" description="Aggiungi un potenziale cliente e gestiscilo direttamente da qui." action={<PrimaryButton onClick={()=>setNewLead(true)}>Aggiungi lead</PrimaryButton>}/>}
+    </div>
+  </section>
+  {newLead&&<LeadForm close={()=>setNewLead(false)}/>}
   {newClient&&<ClientForm close={()=>setNewClient(false)} after={id=>nav("/clienti/"+id)}/>}</main>
 }
 
@@ -277,13 +305,13 @@ function PaymentsPage(){
   return <main className="page revenue-page">
     <header className="page-title editorial-header"><div><span className="eyebrow">PANORAMICA FINANZIARIA</span><h1>Entrate</h1><p>Quanto hai incassato, cosa deve ancora arrivare e da chi.</p></div><PrimaryButton onClick={()=>setNewPayment(true)}>+ Pagamento</PrimaryButton></header>
     <section className="revenue-hero-grid">
-      <Card className="revenue-primary"><span className="eyebrow">QUESTO MESE</span><h2>€ {monthTotal.toLocaleString('it-IT')}</h2><p>{currentMonth.length} incassi</p></Card>
-      <Card className="revenue-dark"><span className="eyebrow">ANNO {nowDate.getFullYear()}</span><h2>€ {yearTotal.toLocaleString('it-IT')}</h2><p>totale incassato</p></Card>
-      <Card className="revenue-glass"><span className="eyebrow">DA RICEVERE</span><h2>€ {pendingTotal.toLocaleString('it-IT')}</h2><p>{pending.filter(p=>paymentStatus(p)==='Scaduto').length} scaduti</p></Card>
-      <Card className="revenue-glass"><span className="eyebrow">INCASSATO STORICO</span><h2>€ {receivedTotal.toLocaleString('it-IT')}</h2><p>{paid.length} pagamenti</p></Card>
+      <Card className="revenue-primary"><span className="kpi-title">Questo mese</span><h2>€ {monthTotal.toLocaleString('it-IT')}</h2><p>{currentMonth.length} incassi</p></Card>
+      <Card className="revenue-dark"><span className="kpi-title">Anno {nowDate.getFullYear()}</span><h2>€ {yearTotal.toLocaleString('it-IT')}</h2><p>totale incassato</p></Card>
+      <Card className="revenue-glass"><span className="kpi-title">Da ricevere</span><h2>€ {pendingTotal.toLocaleString('it-IT')}</h2><p>{pending.filter(p=>paymentStatus(p)==='Scaduto').length} scaduti</p></Card>
+      <Card className="revenue-glass"><span className="kpi-title">Incassato</span><h2>€ {receivedTotal.toLocaleString('it-IT')}</h2><p>{paid.length} pagamenti</p></Card>
     </section>
     <Card className="revenue-chart-card">
-      <div className="section-head"><div><span className="eyebrow">ANDAMENTO</span><h2>Entrate nel tempo</h2><p>Periodo attuale in evidenza, periodo precedente più tenue.</p></div><div className="segment-control revenue-range">{[1,3,6,12].map(n=><button key={n} className={range===n?'active':''} onClick={()=>setRange(n)}>{n===1?'1 mese':n===12?'1 anno':n+' mesi'}</button>)}</div></div>
+      <div className="section-head"><div><span className="eyebrow">ANDAMENTO</span><h2>Entrate nel tempo</h2><p>Periodo attuale in evidenza, periodo precedente più tenue.</p></div><div className="segment-control revenue-range">{[1,3,6,12].map(n=><button key={n} className={range===n?'active':''} onClick={()=>setRange(n)}>{n===1?'1M':n===12?'1Y':n+'M'}</button>)}</div></div>
       <div className="line-chart-wrap"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="Andamento entrate"><defs><linearGradient id="revArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#c9571b" stopOpacity=".34"/><stop offset="100%" stopColor="#c9571b" stopOpacity="0"/></linearGradient></defs><path d={path(prevPoints)} className="revenue-prev-line"/><path d={path(points)+' L 100 100 L 0 100 Z'} fill="url(#revArea)"/><path d={path(points)} className="revenue-line"/></svg></div>
       <div className="revenue-axis">{series.map((x,i)=><span key={i}>{x.label}</span>)}</div>
     </Card>
@@ -296,13 +324,6 @@ function PaymentsPage(){
   </main>
 }
 
-function LeadsPage(){
-  const leads=useLiveQuery(()=>db.leads.toArray(),[])||[];
-  const [newLead,setNewLead]=useState(false);
-  async function setStatus(lead:Lead,status:Lead['status']){await db.leads.update(lead.id,{status,updatedAt:now()});queueSync();}
-  return <main className="page"><header className="page-title"><div><h1>Potenziali clienti</h1><p>Follow-up chiari, nessun lead dimenticato.</p></div><PrimaryButton onClick={()=>setNewLead(true)}>+ Lead</PrimaryButton></header><div className="list">{leads.filter(l=>!l.deletedAt).map(l=><Card key={l.id}><div className="row spread"><div><h3>{l.name}</h3><p>{l.contact||'Nessun contatto'} · € {l.monthlyValue.toLocaleString('it-IT')}/mese</p>{l.nextFollowUpAt&&<small className={new Date(l.nextFollowUpAt)<new Date()?'error':'muted'}>Follow-up: {fmtDate(l.nextFollowUpAt)}</small>}</div><select value={l.status} onChange={e=>setStatus(l,e.target.value as Lead['status'])}>{['Da contattare','Contattato','Appuntamento','Proposta inviata','Acquisito','Perso'].map(x=><option key={x}>{x}</option>)}</select></div></Card>)}{!leads.length&&<Empty title="Nessun lead ancora"/>}</div>{newLead&&<LeadForm close={()=>setNewLead(false)}/>}</main>
-}
-
 function MorePage(){
   const settings=useLiveQuery(()=>db.settings.get('settings'),[]); const [syncCode,setSyncCodeState]=useState(''); const [newSyncCode,setNewSyncCode]=useState(''); const [msg,setMsg]=useState(''); const [pinModal,setPinModal]=useState(false); const [resetOpen,setResetOpen]=useState(false);
   useEffect(()=>{getSyncCode().then(setSyncCodeState)},[]);
@@ -310,7 +331,7 @@ function MorePage(){
   async function copySyncCode(){const code=await getSyncCode();await navigator.clipboard.writeText(code);setMsg('Codice copiato ✓')}
   async function connectDevice(){if(!newSyncCode.trim())return;const old=await getSyncCode();try{await setSyncCode(newSyncCode);await syncRemote();setSyncCodeState(newSyncCode.trim().toLowerCase());setNewSyncCode('');setMsg('Dispositivo collegato ✓')}catch(e:any){await setSyncCode(old);setMsg(e?.message||'Collegamento non riuscito')}}
   async function updateSetting(patch:any){await db.settings.update('settings',{...patch,updatedAt:now()});queueSync()}
-  return <main className="page"><header className="page-title"><div><span className="eyebrow">CONTROLLO</span><h1>Il tuo spazio</h1><p>Preferenze, sicurezza e dati in un unico posto.</p></div></header><div className="settings-grid"><Card><h3>App</h3><label className="setting-row"><span>Nome</span><input value={settings?.profileName||''} placeholder="Il tuo nome" onChange={e=>updateSetting({profileName:e.target.value})}/></label><div className="setting-row"><span>Tema</span><button className="btn ghost" onClick={()=>updateSetting({darkMode:!settings?.darkMode})}>{settings?.darkMode?'Tema chiaro':'Tema scuro'}</button></div></Card><Card><h3>Sicurezza</h3><p className="muted">Il PIN viene sincronizzato tra i dispositivi collegati.</p><PrimaryButton onClick={()=>setPinModal(true)}>Cambia PIN</PrimaryButton></Card><Card><h3>Notifiche</h3><label className="setting-row"><span>Notifiche</span><input type="checkbox" checked={settings?.notificationsEnabled!==false} onChange={e=>updateSetting({notificationsEnabled:e.target.checked})}/></label><button className="btn ghost" onClick={async()=>{if("Notification" in window){const p=await Notification.requestPermission();setMsg(p==="granted"?"Notifiche dispositivo abilitate ✓":"Permesso notifiche non concesso")}}}>Abilita notifiche dispositivo</button><label className="setting-row"><span>Scadenze clienti</span><input type="checkbox" checked={settings?.clientReminders!==false} onChange={e=>updateSetting({clientReminders:e.target.checked})}/></label><label className="setting-row"><span>Appuntamenti</span><input type="checkbox" checked={settings?.appointmentReminders!==false} onChange={e=>updateSetting({appointmentReminders:e.target.checked})}/></label></Card><Card><h3>Sincronizzazione</h3><p className="muted">Automatica all'apertura, in foreground, quando torni online, dopo i salvataggi e periodicamente.</p><p><b>Ultimo aggiornamento:</b> {settings?.lastSyncAt?new Date(settings.lastSyncAt).toLocaleString('it-IT'):'Non ancora disponibile'}</p><label>Codice dispositivo<input readOnly value={syncCode}/></label><PrimaryButton onClick={copySyncCode}>Copia codice</PrimaryButton><label>Collega questo dispositivo<input value={newSyncCode} onChange={e=>setNewSyncCode(e.target.value)} placeholder="Incolla codice condiviso"/></label><button className="btn ghost" onClick={connectDevice}>Collega dispositivo</button>{msg&&<p className="muted">{msg}</p>}</Card><Card><h3>Dati</h3><PrimaryButton onClick={fileRef}>Esporta backup</PrimaryButton><label className="file-btn">Ripristina backup<input type="file" accept="application/json" onChange={async e=>{const f=e.target.files?.[0];if(f){await importAll(JSON.parse(await f.text()));location.reload()}}}/></label><div className="danger-zone"><button className="btn danger" onClick={()=>setResetOpen(true)}>Resetta tutti i dati</button></div></Card><LinkCard to="/pagamenti" title="ENTRATE" value="Apri pagamenti" note="Grafico, incassi e scadenze"/><LinkCard to="/lead" title="LEAD" value="Apri potenziali clienti" note="Follow-up e pipeline"/><LinkCard to="/abitudini" title="RITMO" value="Apri Ritmo" note="Vista semplice degli ultimi 14 giorni"/></div>{pinModal&&<ChangePinModal close={()=>setPinModal(false)}/>} {resetOpen&&<ResetModal close={()=>setResetOpen(false)}/>}</main>
+  return <main className="page"><header className="page-title"><div><span className="eyebrow">CONTROLLO</span><h1>Il tuo spazio</h1><p>Preferenze, sicurezza e dati in un unico posto.</p></div></header><div className="settings-grid"><Card><h3>App</h3><label className="setting-row"><span>Nome</span><input value={settings?.profileName||''} placeholder="Il tuo nome" onChange={e=>updateSetting({profileName:e.target.value})}/></label><div className="setting-row"><span>Tema</span><button className="btn ghost" onClick={()=>updateSetting({darkMode:!settings?.darkMode})}>{settings?.darkMode?'Tema chiaro':'Tema scuro'}</button></div></Card><Card><h3>Sicurezza</h3><p className="muted">Il PIN viene sincronizzato tra i dispositivi collegati.</p><PrimaryButton onClick={()=>setPinModal(true)}>Cambia PIN</PrimaryButton></Card><Card><h3>Notifiche</h3><label className="setting-row"><span>Notifiche</span><input type="checkbox" checked={settings?.notificationsEnabled!==false} onChange={e=>updateSetting({notificationsEnabled:e.target.checked})}/></label><button className="btn ghost" onClick={async()=>{if("Notification" in window){const p=await Notification.requestPermission();setMsg(p==="granted"?"Notifiche dispositivo abilitate ✓":"Permesso notifiche non concesso")}}}>Abilita notifiche dispositivo</button><label className="setting-row"><span>Scadenze clienti</span><input type="checkbox" checked={settings?.clientReminders!==false} onChange={e=>updateSetting({clientReminders:e.target.checked})}/></label><label className="setting-row"><span>Appuntamenti</span><input type="checkbox" checked={settings?.appointmentReminders!==false} onChange={e=>updateSetting({appointmentReminders:e.target.checked})}/></label></Card><Card><h3>Sincronizzazione</h3><p className="muted">Automatica all'apertura, in foreground, quando torni online, dopo i salvataggi e periodicamente.</p><p><b>Ultimo aggiornamento:</b> {settings?.lastSyncAt?new Date(settings.lastSyncAt).toLocaleString('it-IT'):'Non ancora disponibile'}</p><label>Codice dispositivo<input readOnly value={syncCode}/></label><PrimaryButton onClick={copySyncCode}>Copia codice</PrimaryButton><label>Collega questo dispositivo<input value={newSyncCode} onChange={e=>setNewSyncCode(e.target.value)} placeholder="Incolla codice condiviso"/></label><button className="btn ghost" onClick={connectDevice}>Collega dispositivo</button>{msg&&<p className="muted">{msg}</p>}</Card><Card><h3>Dati</h3><PrimaryButton onClick={fileRef}>Esporta backup</PrimaryButton><label className="file-btn">Ripristina backup<input type="file" accept="application/json" onChange={async e=>{const f=e.target.files?.[0];if(f){await importAll(JSON.parse(await f.text()));location.reload()}}}/></label><div className="danger-zone"><button className="btn danger" onClick={()=>setResetOpen(true)}>Resetta tutti i dati</button></div></Card><LinkCard to="/pagamenti" title="ENTRATE" value="Apri pagamenti" note="Grafico, incassi e scadenze"/><LinkCard to="/abitudini" title="RITMO" value="Apri Ritmo" note="Vista semplice degli ultimi 14 giorni"/></div>{pinModal&&<ChangePinModal close={()=>setPinModal(false)}/>} {resetOpen&&<ResetModal close={()=>setResetOpen(false)}/>}</main>
 }
 
 function ChangePinModal({close}:{close:()=>void}){const [pin,setPin]=useState('');const [confirmPin,setConfirmPin]=useState('');const [msg,setMsg]=useState('');async function save(){if(pin!==confirmPin||pin.length!==4){setMsg('I PIN non coincidono.');return}const hash=await makePinHash(pin);await db.settings.update('settings',{pinHash:hash,updatedAt:now()});await syncRemote().catch(()=>{});close()}return <Modal title="Cambia PIN" close={close}><div className="form"><label>Nuovo PIN<input inputMode="numeric" maxLength={4} value={pin} onChange={e=>setPin(e.target.value.replace(/\D/g,''))}/></label><label>Conferma PIN<input inputMode="numeric" maxLength={4} value={confirmPin} onChange={e=>setConfirmPin(e.target.value.replace(/\D/g,''))}/></label>{msg&&<p className="error">{msg}</p>}<PrimaryButton onClick={save}>Salva PIN</PrimaryButton></div></Modal>}
@@ -367,7 +388,38 @@ function ScriptForm({client,ideas,close,edit}:{client:Client;ideas:Idea[];close:
 
 function GlobalScriptForm({close}:{close:()=>void}){const clients=useLiveQuery(()=>db.clients.toArray(),[])||[];const [clientId,setClientId]=useState('');const client=clients.find(c=>c.id===clientId);const ideas=useLiveQuery(()=>clientId?db.ideas.where('clientId').equals(clientId).toArray():[],[clientId])||[];if(client)return <ScriptForm client={client} ideas={ideas} close={close}/>;return <Modal title="Nuovo script" close={close}><div className="form"><label>Cliente<select value={clientId} onChange={e=>setClientId(e.target.value)}><option value="">Seleziona cliente</option>{clients.map(c=><option value={c.id} key={c.id}>{c.name}</option>)}</select></label></div></Modal>}
 
-function EventForm({kind,close,edit}:{kind:'Lavoro'|'Personale';close:()=>void;edit?:CalendarEvent}){const events=useLiveQuery(()=>db.events.toArray(),[])||[];const startDate=edit?toDateOnly(new Date(edit.startAt)):toDateOnly(new Date());const startTime=edit&&!edit.allDay?new Date(edit.startAt).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}):'';const [title,setTitle]=useState(edit?.title||'');const [date,setDate]=useState(startDate);const [time,setTime]=useState(startTime);const [category,setCategory]=useState(edit?.category||(kind==='Personale'?'Personale':'Appuntamento'));const [error,setError]=useState('');async function save(e:any){e.preventDefault();const t=now();const startAt=time?new Date(`${date}T${time}:00`).toISOString():new Date(`${date}T00:00:00`).toISOString();const candidate:CalendarEvent={id:edit?.id||uid(),title,kind,category,startAt,allDay:!time,createdAt:edit?.createdAt||t,updatedAt:t};const c=getConflicts(candidate,events);if(time&&c.length&&!confirm(`Conflitto con: ${c.map(x=>x.kind==='Personale'?'Fascia occupata':x.title).join(', ')}. Inserire comunque?`))return;await db.events.put(candidate);queueSync();close()}async function remove(){if(edit&&confirm('Eliminare questo evento?')){await db.events.update(edit.id,{deletedAt:now(),updatedAt:now()});queueSync();close()}}return <Modal title={edit?'Modifica evento':kind==='Personale'?'Nuovo impegno personale':'Nuovo appuntamento lavoro'} close={close}><form className="form" onSubmit={save}><label>Titolo<input required value={title} onChange={e=>setTitle(e.target.value)}/></label><label>Data<input required type="date" value={date} onChange={e=>setDate(e.target.value)}/></label><label>Ora <span className="muted">(opzionale)</span><input type="time" value={time} onChange={e=>setTime(e.target.value)}/></label><label>Categoria<input value={category} onChange={e=>setCategory(e.target.value)}/></label>{error&&<p className="error">{error}</p>}<PrimaryButton type="submit">Salva</PrimaryButton>{edit&&<button type="button" className="btn danger" onClick={remove}>Elimina evento</button>}</form></Modal>}
+function EventForm({kind,close,edit}:{kind:'Lavoro'|'Personale';close:()=>void;edit?:CalendarEvent}){
+  const events=useLiveQuery(()=>db.events.toArray(),[])||[];
+  const startDate=edit?toDateOnly(new Date(edit.startAt)):toDateOnly(new Date());
+  const startTime=edit&&!edit.allDay?new Date(edit.startAt).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}):'';
+  const [eventKind,setEventKind]=useState<'Lavoro'|'Personale'>(edit?.kind||kind);
+  const [title,setTitle]=useState(edit?.title||'');
+  const [date,setDate]=useState(startDate);
+  const [time,setTime]=useState(startTime);
+  const [category,setCategory]=useState(edit?.category||(eventKind==='Personale'?'Personale':'Appuntamento'));
+  function chooseKind(next:'Lavoro'|'Personale'){
+    setEventKind(next);
+    if(category==='Personale'||category==='Appuntamento') setCategory(next==='Personale'?'Personale':'Appuntamento');
+  }
+  async function save(e:any){
+    e.preventDefault();const t=now();
+    const startAt=time?new Date(`${date}T${time}:00`).toISOString():new Date(`${date}T00:00:00`).toISOString();
+    const candidate:CalendarEvent={id:edit?.id||uid(),title,kind:eventKind,category,startAt,allDay:!time,createdAt:edit?.createdAt||t,updatedAt:t};
+    const conflicts=getConflicts(candidate,events);
+    if(time&&conflicts.length&&!confirm(`Conflitto con: ${conflicts.map(x=>x.kind==='Personale'?'Fascia occupata':x.title).join(', ')}. Inserire comunque?`))return;
+    await db.events.put(candidate);queueSync();close();
+  }
+  async function remove(){if(edit&&confirm('Eliminare questo evento?')){await db.events.update(edit.id,{deletedAt:now(),updatedAt:now()});queueSync();close()}}
+  return <Modal title={edit?'Modifica appuntamento':'Nuovo appuntamento'} close={close}><form className="form appointment-form" onSubmit={save}>
+    <fieldset><legend>Tipo appuntamento</legend><div className="appointment-kind"><button type="button" className={eventKind==='Lavoro'?'active':''} onClick={()=>chooseKind('Lavoro')}>Lavoro</button><button type="button" className={eventKind==='Personale'?'active personal':''} onClick={()=>chooseKind('Personale')}>Personale</button></div></fieldset>
+    <label>Titolo<input required value={title} onChange={e=>setTitle(e.target.value)}/></label>
+    <label>Data<input required type="date" value={date} onChange={e=>setDate(e.target.value)}/></label>
+    <label>Ora <span className="muted">(opzionale)</span><input type="time" value={time} onChange={e=>setTime(e.target.value)}/></label>
+    <label>Categoria<input value={category} onChange={e=>setCategory(e.target.value)}/></label>
+    <PrimaryButton type="submit">Salva appuntamento</PrimaryButton>
+    {edit&&<button type="button" className="btn danger" onClick={remove}>Elimina evento</button>}
+  </form></Modal>
+}
 
 function TaskForm({close,clientId,initialStage,title='Nuova attività'}:{close:()=>void;clientId?:string;initialStage?:WorkflowStage;title?:string}){
   const clients=useLiveQuery(()=>db.clients.toArray(),[])||[];
