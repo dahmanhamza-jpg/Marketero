@@ -1,17 +1,32 @@
-/* Background-only refinement: keep every component, color and layout unchanged. */
+/* Scope intentionally limited to: general light-theme background + fixed bottom navigation spacing. */
 html:not([data-theme="dark"]){
-  background:#f7f4ef !important;
+  background:#deddda !important;
 }
 
 html:not([data-theme="dark"]) body{
   background:
-    radial-gradient(circle at 12% 8%,rgba(255,255,255,.96),transparent 32rem),
-    radial-gradient(circle at 92% 0%,rgba(185,82,32,.07),transparent 28rem),
-    linear-gradient(180deg,#f7f4ef 0%,#f0ebe5 100%) !important;
+    radial-gradient(circle at 12% 8%,rgba(255,255,255,.42),transparent 32rem),
+    radial-gradient(circle at 92% 0%,rgba(185,82,32,.045),transparent 28rem),
+    linear-gradient(180deg,#deddda 0%,#d5d4d1 100%) !important;
 }
 
 html:not([data-theme="dark"]) body:before{
   background:
-    linear-gradient(rgba(255,255,255,.06),rgba(255,255,255,.06)),
-    radial-gradient(circle at 50% 120%,rgba(92,72,58,.035),transparent 36rem) !important;
+    linear-gradient(rgba(255,255,255,.025),rgba(255,255,255,.025)),
+    radial-gradient(circle at 50% 120%,rgba(72,68,64,.025),transparent 36rem) !important;
+}
+
+.bottom-nav{
+  position:fixed !important;
+  left:50% !important;
+  bottom:max(12px,env(safe-area-inset-bottom)) !important;
+  z-index:70 !important;
+}
+
+.app-shell{
+  padding-bottom:calc(120px + env(safe-area-inset-bottom)) !important;
+}
+
+.page{
+  padding-bottom:calc(118px + env(safe-area-inset-bottom)) !important;
 }
