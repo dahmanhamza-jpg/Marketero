@@ -62,7 +62,7 @@ h1,h2,h3,p{margin-top:0}
 .focus-mini p,.dopamine-mini p{color:rgba(255,255,255,.63)}
 .dopamine-mini{background:linear-gradient(135deg,#ff7b2d,#ff9b5f);color:#1b120d}
 .mini-progress{height:6px;border-radius:99px;background:rgba(0,0,0,.12);overflow:hidden;margin-top:12px}.mini-progress span{height:100%;display:block;background:#16130f}
-.client-progress-home a{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line)}
+.client-progress-home a{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}
 .client-progress-home a:last-child{border-bottom:0}.client-progress-home a>div{display:grid;gap:3px}.client-progress-home small{color:var(--muted)}.client-progress-home strong{font-size:1.4rem}
 .quote-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
 .quote-card blockquote{margin:10px 0 8px;font-size:1.08rem;line-height:1.5;font-weight:620}
@@ -136,7 +136,6 @@ html[data-theme="dark"] .progress-ring:before{background:#201e1c}
  .keypad{grid-template-columns:repeat(3,68px)}.keypad button{width:68px;height:68px}.form input,.form textarea,.form select{font-size:16px}.reward-toast{right:12px;top:12px}
 }
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
-
 
 /* UX refinement pass — calendar, home, controls, forms */
 :root{
@@ -301,7 +300,6 @@ html[data-theme="dark"] .form input,html[data-theme="dark"] .form textarea,html[
   .quick-grid{grid-template-columns:1fr!important}
   .quick-action{min-height:68px!important}
 }
-
 
 /* Final refinement: darker atmosphere, clean week, viewport-fit calendar, cinematic unlock */
 :root{
@@ -487,7 +485,6 @@ html[data-theme="dark"] .day-strip button.today{background:linear-gradient(145de
 @media(prefers-reduced-motion:reduce){
   .unlock-cinematic,.unlock-cinematic:before,.unlock-cinematic:after,.cinematic-logo,.cinematic-line,.cinematic-orbit{animation:none!important}
 }
-
 
 /* Prompt refinement: darker free-space hero, 2x2 revenue KPIs, appointment type, embedded leads */
 .hero{
@@ -896,4 +893,74 @@ html[data-theme="dark"] .day-strip button.today{background:linear-gradient(145de
   }
   .unlock-stage.is-unlocking .unlock-home-layer{opacity:1;filter:none;transform:none}
   .unlock-cinematic{opacity:0;transition:opacity .22s ease-out}
+}
+
+/* Dark mode readability: preserve the existing Altro > App > Tema toggle and invert base text colors. */
+html[data-theme="dark"] body,
+html[data-theme="dark"] .app-shell,
+html[data-theme="dark"] .page,
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .client-card,
+html[data-theme="dark"] .month-wrap,
+html[data-theme="dark"] .calendar-shell,
+html[data-theme="dark"] .modal,
+html[data-theme="dark"] .sheet{
+  color:#f5f2ed;
+}
+html[data-theme="dark"] .top h1,
+html[data-theme="dark"] .page-title h1,
+html[data-theme="dark"] .client-hero h1,
+html[data-theme="dark"] .card h2,
+html[data-theme="dark"] .card h3,
+html[data-theme="dark"] .settings-grid h3,
+html[data-theme="dark"] .payment-row h3,
+html[data-theme="dark"] .workflow-overview h2,
+html[data-theme="dark"] .calendar-event h3,
+html[data-theme="dark"] .month-nav h2,
+html[data-theme="dark"] .daily-note blockquote,
+html[data-theme="dark"] .habit-rate strong,
+html[data-theme="dark"] .stat strong,
+html[data-theme="dark"] .next-action,
+html[data-theme="dark"] .deadline-note,
+html[data-theme="dark"] .setting-row,
+html[data-theme="dark"] .sheet-head h2{
+  color:#f5f2ed!important;
+}
+html[data-theme="dark"] .page-title p,
+html[data-theme="dark"] .top p,
+html[data-theme="dark"] .card p,
+html[data-theme="dark"] p,
+html[data-theme="dark"] .muted,
+html[data-theme="dark"] .eyebrow,
+html[data-theme="dark"] small,
+html[data-theme="dark"] .stat span,
+html[data-theme="dark"] .stat small,
+html[data-theme="dark"] .event-copy small,
+html[data-theme="dark"] .day-number span,
+html[data-theme="dark"] .lead-card-compact p,
+html[data-theme="dark"] .lead-section-head p{
+  color:#c5beb6!important;
+}
+html[data-theme="dark"] .btn.primary,
+html[data-theme="dark"] .btn.soft,
+html[data-theme="dark"] .btn.ghost,
+html[data-theme="dark"] .chip:not(.active),
+html[data-theme="dark"] .tabs button:not(.active),
+html[data-theme="dark"] .segment-control button:not(.active),
+html[data-theme="dark"] .calendar-filter button:not(.active),
+html[data-theme="dark"] .appointment-kind button:not(.active),
+html[data-theme="dark"] .lead-outcome button:not(.active){
+  color:#f5f2ed!important;
+}
+html[data-theme="dark"] .btn.soft,
+html[data-theme="dark"] .btn.ghost,
+html[data-theme="dark"] .chip:not(.active),
+html[data-theme="dark"] .icon-btn,
+html[data-theme="dark"] .icon,
+html[data-theme="dark"] .segment-control,
+html[data-theme="dark"] .appointment-kind,
+html[data-theme="dark"] .lead-outcome,
+html[data-theme="dark"] .lead-check{
+  background:rgba(255,255,255,.07)!important;
+  border-color:rgba(255,255,255,.10)!important;
 }
