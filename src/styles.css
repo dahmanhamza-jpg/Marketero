@@ -487,3 +487,192 @@ html[data-theme="dark"] .day-strip button.today{background:linear-gradient(145de
 @media(prefers-reduced-motion:reduce){
   .unlock-cinematic,.unlock-cinematic:before,.unlock-cinematic:after,.cinematic-logo,.cinematic-line,.cinematic-orbit{animation:none!important}
 }
+
+
+/* Prompt refinement: darker free-space hero, 2x2 revenue KPIs, appointment type, embedded leads */
+.hero{
+  background:
+    radial-gradient(circle at 84% 18%,rgba(170,82,39,.38),transparent 23rem),
+    radial-gradient(circle at 18% 110%,rgba(153,124,98,.16),transparent 24rem),
+    linear-gradient(135deg,#171513 0%,#28221e 52%,#4a2b1d 100%);
+  box-shadow:0 30px 80px rgba(20,15,12,.28),inset 0 1px rgba(255,255,255,.04);
+}
+.hero h2{color:#fff;font-weight:560}
+.hero p{color:rgba(255,255,255,.76)}
+.hero .eyebrow{color:rgba(255,255,255,.58)}
+.hero .btn.primary{background:linear-gradient(135deg,#a4471c,#c6612d);box-shadow:0 10px 28px rgba(124,51,18,.32)}
+
+.revenue-hero-grid{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:12px;
+  max-width:100%;
+}
+.revenue-hero-grid .card{
+  min-height:172px;
+  padding:24px;
+}
+.revenue-hero-grid .kpi-title{
+  font-size:clamp(1.08rem,1.8vw,1.5rem);
+  line-height:1.15;
+  letter-spacing:-.025em;
+  font-weight:560;
+  margin-bottom:auto;
+}
+.revenue-hero-grid h2{
+  font-size:clamp(2.35rem,5vw,4rem);
+  font-weight:570;
+  letter-spacing:-.065em;
+  margin:.55rem 0 .15rem;
+}
+.revenue-hero-grid p{margin-bottom:0}
+
+.revenue-chart-card .section-head{align-items:flex-end}
+.revenue-chart-card .section-head h2{
+  font-size:clamp(1.55rem,2.6vw,2.2rem);
+  font-weight:560;
+  letter-spacing:-.035em;
+  margin:.2rem 0;
+}
+.revenue-range{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(44px,1fr));
+  gap:4px;
+  width:min(290px,100%);
+  flex:0 0 auto;
+  padding:4px;
+  white-space:nowrap;
+}
+.revenue-range button{
+  min-width:0;
+  padding:9px 12px;
+  font-size:.76rem;
+  letter-spacing:.03em;
+}
+.revenue-range button.active{
+  background:linear-gradient(145deg,#171513,#32271f);
+  color:#fff;
+  box-shadow:0 7px 16px rgba(20,16,13,.17);
+}
+
+.appointment-kind{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:5px;
+  padding:4px;
+  border-radius:999px;
+  background:rgba(29,24,20,.08);
+  border:1px solid var(--line);
+}
+.appointment-kind button{
+  border:0;
+  min-height:44px;
+  border-radius:999px;
+  background:transparent;
+  color:var(--text-secondary);
+  font-weight:700;
+  transition:background .18s ease,color .18s ease,box-shadow .18s ease,transform .16s ease;
+}
+.appointment-kind button.active{
+  background:linear-gradient(145deg,#171513,#302720);
+  color:#fff;
+  box-shadow:0 7px 16px rgba(20,16,13,.15);
+}
+.appointment-kind button.active.personal{
+  background:linear-gradient(145deg,#625d59,#403b38);
+}
+.appointment-kind button:active{transform:scale(.98)}
+
+.lead-section{
+  margin-top:28px;
+  padding-top:22px;
+  border-top:1px solid var(--line);
+}
+.lead-section-head{margin-bottom:12px}
+.lead-section-head h2{
+  margin:.25rem 0;
+  font-size:clamp(1.85rem,3vw,2.75rem);
+  font-weight:560;
+  letter-spacing:-.045em;
+}
+.lead-section-head p{margin:0;color:var(--text-secondary)}
+.lead-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.lead-card-compact{padding:18px;display:grid;gap:15px}
+.lead-main{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.lead-card-compact h3{
+  font-size:1.3rem;
+  font-weight:580;
+  letter-spacing:-.025em;
+  margin:.25rem 0;
+}
+.lead-card-compact p{margin:0;color:var(--text-secondary);font-size:.84rem}
+.lead-check{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-height:40px;
+  padding:7px 10px;
+  border-radius:999px;
+  background:rgba(23,20,18,.06);
+  border:1px solid var(--line);
+  font-size:.74rem;
+  font-weight:700;
+  white-space:nowrap;
+}
+.lead-check input{
+  width:18px;
+  height:18px;
+  accent-color:#4f6d58;
+}
+.lead-outcome{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:5px;
+  padding:4px;
+  background:rgba(22,19,17,.055);
+  border-radius:15px;
+}
+.lead-outcome button{
+  border:0;
+  min-height:38px;
+  border-radius:12px;
+  background:transparent;
+  color:var(--text-secondary);
+  font-size:.72rem;
+  font-weight:700;
+}
+.lead-outcome button.active{
+  background:#1b1816;
+  color:#fff;
+  box-shadow:0 5px 14px rgba(22,18,15,.14);
+}
+.lead-outcome button:nth-child(1).active{background:#425f4b}
+.lead-outcome button:nth-child(2).active{background:#7f3b34}
+.lead-outcome button:nth-child(3).active{background:#81501f}
+
+.card h3,.settings-grid h3,.payment-row h3{
+  font-weight:560;
+  letter-spacing:-.025em;
+}
+.card h2{font-weight:560}
+
+@media(max-width:760px){
+  .revenue-hero-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px;
+  }
+  .revenue-hero-grid .card{min-height:138px;padding:15px}
+  .revenue-hero-grid .kpi-title{font-size:.94rem}
+  .revenue-hero-grid h2{font-size:clamp(1.75rem,8vw,2.65rem)}
+  .revenue-chart-card .section-head{align-items:stretch}
+  .revenue-range{width:100%;max-width:none}
+  .lead-cards{grid-template-columns:1fr}
+  .lead-main{align-items:flex-start}
+}
+@media(max-width:390px){
+  .revenue-hero-grid .card{min-height:126px;padding:13px}
+  .revenue-hero-grid .kpi-title{font-size:.84rem}
+  .revenue-hero-grid h2{font-size:1.72rem}
+  .revenue-hero-grid p{font-size:.7rem}
+  .revenue-range button{padding:8px 6px;font-size:.7rem}
+  .lead-check{padding:6px 8px}
+}
