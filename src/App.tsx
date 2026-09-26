@@ -16,6 +16,7 @@ import { FocusPage } from './features/FocusPage';
 import { HabitsPage } from './features/HabitsPage';
 import { award, levelFor, rewardTotal } from './lib/rewards';
 import { workflowSummary } from './lib/workflow';
+import { isLeadContacted, statusForLeadOutcome } from './lib/lead';
 import type { CalendarEvent, Client, ContentFormat, Idea, Lead, Payment, Platform, Script, Task, WorkflowStage } from './types/models';
 import './styles.css';
 
@@ -113,12 +114,12 @@ function Clients(){
   const prevRevenue=payments.filter(p=>!p.deletedAt&&p.paidAt&&new Date(p.paidAt).getMonth()===prevDate.getMonth()&&new Date(p.paidAt).getFullYear()===prevDate.getFullYear()).reduce((sum,p)=>sum+p.amount,0);
   const monthTrend=prevRevenue?Math.round((monthRevenue-prevRevenue)/prevRevenue*100):null;
   async function toggleLeadContacted(lead:Lead){
-    const contacted=!(lead.contacted ?? lead.status!=='Da contattare');
+    const contacted=!isLeadContacted(lead);
     await db.leads.update(lead.id,{contacted,lastContactAt:contacted?now():lead.lastContactAt,status:contacted?'Contattato':'Da contattare',updatedAt:now()});
     queueSync();
   }
   async function setLeadOutcome(lead:Lead,outcome:Lead['outcome']){
-    const status=outcome==='OK'?'Acquisito':outcome==='NO'?'Perso':'Contattato';
+    const status=statusForLeadOutcome(outcome!);
     await db.leads.update(lead.id,{outcome,contacted:true,lastContactAt:lead.lastContactAt||now(),status,updatedAt:now()});
     queueSync();
   }
@@ -130,7 +131,7 @@ function Clients(){
   <section className="lead-section">
     <div className="section-head lead-section-head"><div><span className="eyebrow">POTENZIALI CLIENTI</span><h2>Lead</h2><p>Contatto ed esito aggiornabili con un tap.</p></div><PrimaryButton onClick={()=>setNewLead(true)}>+ Lead</PrimaryButton></div>
     <div className="lead-cards">
-      {leads.filter(l=>!l.deletedAt).map(lead=>{const contacted=lead.contacted ?? lead.status!=='Da contattare';return <Card key={lead.id} className="lead-card-compact">
+      {leads.filter(l=>!l.deletedAt).map(lead=>{const contacted=isLeadContacted(lead);return <Card key={lead.id} className="lead-card-compact">
         <div className="lead-main">
           <div><span className="eyebrow">{lead.nextFollowUpAt?'RICHIAMO '+fmtDate(lead.nextFollowUpAt):'LEAD'}</span><h3>{lead.name}</h3><p>{lead.contact||lead.email||lead.phone||'Nessun contatto'}</p></div>
           <label className="lead-check"><input type="checkbox" checked={contacted} onChange={()=>toggleLeadContacted(lead)}/><span>{contacted?'Contattato':'Da contattare'}</span></label>
