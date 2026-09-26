@@ -28,11 +28,20 @@ html:not([data-theme="dark"]) .app-shell{
   min-height:100dvh;
 }
 
+/* Important: once unlock is finished, do not let the animated wrapper become
+   the containing block for position:fixed descendants on mobile Safari. */
+.unlock-stage.is-ready .unlock-home-layer{
+  will-change:auto !important;
+  transform:none !important;
+  filter:none !important;
+}
+
 .bottom-nav{
   position:fixed !important;
   left:50% !important;
   bottom:max(12px,env(safe-area-inset-bottom)) !important;
-  z-index:70 !important;
+  transform:translateX(-50%) !important;
+  z-index:1000 !important;
 }
 
 .app-shell{
@@ -41,4 +50,16 @@ html:not([data-theme="dark"]) .app-shell{
 
 .page{
   padding-bottom:calc(118px + env(safe-area-inset-bottom)) !important;
+}
+
+@media(max-width:760px){
+  .bottom-nav{
+    position:fixed !important;
+    left:50% !important;
+    right:auto !important;
+    bottom:max(8px,env(safe-area-inset-bottom)) !important;
+    transform:translate3d(-50%,0,0) !important;
+    width:calc(100% - 14px) !important;
+    z-index:1000 !important;
+  }
 }
