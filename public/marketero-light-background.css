@@ -13,6 +13,7 @@ html:not([data-theme="dark"]) body{
 }
 
 html:not([data-theme="dark"]) body:before{
+  content:none !important;
   background:none !important;
 }
 
