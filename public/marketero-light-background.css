@@ -1,19 +1,30 @@
-/* Scope intentionally limited to: general light-theme background + fixed bottom navigation spacing. */
+/* Scope intentionally limited to: global light-theme background + bottom navigation spacing. */
 html:not([data-theme="dark"]){
-  background:#deddda !important;
+  --app-background:#e9e4de;
+  background:var(--app-background) !important;
+  min-height:100%;
 }
 
 html:not([data-theme="dark"]) body{
+  min-height:100dvh;
   background:
-    radial-gradient(circle at 12% 8%,rgba(255,255,255,.42),transparent 32rem),
-    radial-gradient(circle at 92% 0%,rgba(185,82,32,.045),transparent 28rem),
-    linear-gradient(180deg,#deddda 0%,#d5d4d1 100%) !important;
+    radial-gradient(circle at 70% 20%,rgba(255,107,26,.22),transparent 28rem),
+    var(--app-background) !important;
 }
 
 html:not([data-theme="dark"]) body:before{
-  background:
-    linear-gradient(rgba(255,255,255,.025),rgba(255,255,255,.025)),
-    radial-gradient(circle at 50% 120%,rgba(72,68,64,.025),transparent 36rem) !important;
+  background:none !important;
+}
+
+html:not([data-theme="dark"]) #root,
+html:not([data-theme="dark"]) .app-shell,
+html:not([data-theme="dark"]) .page{
+  background:transparent !important;
+}
+
+html:not([data-theme="dark"]) #root,
+html:not([data-theme="dark"]) .app-shell{
+  min-height:100dvh;
 }
 
 .bottom-nav{
