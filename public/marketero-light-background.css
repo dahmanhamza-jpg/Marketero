@@ -1,0 +1,17 @@
+/* Background-only refinement: keep every component, color and layout unchanged. */
+html:not([data-theme="dark"]){
+  background:#f7f4ef !important;
+}
+
+html:not([data-theme="dark"]) body{
+  background:
+    radial-gradient(circle at 12% 8%,rgba(255,255,255,.96),transparent 32rem),
+    radial-gradient(circle at 92% 0%,rgba(185,82,32,.07),transparent 28rem),
+    linear-gradient(180deg,#f7f4ef 0%,#f0ebe5 100%) !important;
+}
+
+html:not([data-theme="dark"]) body:before{
+  background:
+    linear-gradient(rgba(255,255,255,.06),rgba(255,255,255,.06)),
+    radial-gradient(circle at 50% 120%,rgba(92,72,58,.035),transparent 36rem) !important;
+}
