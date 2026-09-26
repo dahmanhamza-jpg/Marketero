@@ -28,6 +28,12 @@ html:not([data-theme="dark"]) .app-shell{
   min-height:100dvh;
 }
 
+/* After unlock, the wrapper must not cover the global light background. */
+html:not([data-theme="dark"]) .unlock-stage.is-ready,
+html:not([data-theme="dark"]) .unlock-stage.is-ready .unlock-home-layer{
+  background:transparent !important;
+}
+
 /* Important: once unlock is finished, do not let the animated wrapper become
    the containing block for position:fixed descendants on mobile Safari. */
 .unlock-stage.is-ready .unlock-home-layer{
