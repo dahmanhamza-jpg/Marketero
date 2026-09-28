@@ -77,6 +77,51 @@ html:not([data-theme="dark"]) .unlock-stage.is-ready .unlock-home-layer{
   padding-bottom:calc(118px + env(safe-area-inset-bottom)) !important;
 }
 
+/* Revenue privacy: the summary in Clienti is concealed by default and can be
+   revealed with the small eye control. The preference is stored locally. */
+.revenue-link-card{
+  position:relative;
+}
+.revenue-privacy-toggle{
+  position:absolute;
+  top:14px;
+  right:14px;
+  z-index:4;
+  min-height:34px;
+  padding:7px 10px;
+  border:1px solid rgba(24,21,18,.10);
+  border-radius:999px;
+  background:rgba(255,255,255,.72);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  box-shadow:0 8px 22px rgba(31,24,17,.08);
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  color:var(--text,#181512);
+  font-size:.72rem;
+  font-weight:800;
+  line-height:1;
+  cursor:pointer;
+  user-select:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.revenue-privacy-toggle:focus-visible{
+  outline:2px solid rgba(185,82,32,.45);
+  outline-offset:2px;
+}
+html:not(.revenue-visible) .revenue-link-card h2{
+  font-size:0 !important;
+  letter-spacing:0 !important;
+  min-height:1.2em;
+}
+html:not(.revenue-visible) .revenue-link-card h2::after{
+  content:'€ ••••';
+  display:inline-block;
+  font-size:clamp(1.65rem,4vw,2.35rem);
+  letter-spacing:-.04em;
+}
+
 /* PIN unlock: compositor-friendly transition. Avoid animating blur/width to reduce jank on mobile. */
 .unlock-stage.is-unlocking .unlock-home-layer{
   backface-visibility:hidden;
@@ -181,6 +226,12 @@ html:not([data-theme="dark"]) .unlock-stage.is-ready .unlock-home-layer{
   }
   .sheet-backdrop{
     z-index:2000 !important;
+  }
+  .revenue-privacy-toggle{
+    top:11px;
+    right:11px;
+    min-height:32px;
+    padding:6px 9px;
   }
   .unlock-glow{filter:blur(14px) !important}
 }
