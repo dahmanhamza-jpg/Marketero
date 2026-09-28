@@ -58,6 +58,95 @@ html:not([data-theme="dark"]) .unlock-stage.is-ready .unlock-home-layer{
   padding-bottom:calc(118px + env(safe-area-inset-bottom)) !important;
 }
 
+/* PIN unlock: compositor-friendly transition. Avoid animating blur/width to reduce jank on mobile. */
+.unlock-stage.is-unlocking .unlock-home-layer{
+  backface-visibility:hidden;
+  transform:translateZ(0);
+  animation:mkHomeReveal .98s cubic-bezier(.2,.78,.18,1) both !important;
+}
+.unlock-cinematic{
+  backface-visibility:hidden;
+  transform:translateZ(0);
+  filter:none !important;
+  animation:mkUnlockOverlay .98s cubic-bezier(.2,.78,.18,1) forwards !important;
+}
+.unlock-glow{
+  filter:blur(18px) !important;
+  backface-visibility:hidden;
+  animation:mkUnlockGlow .98s cubic-bezier(.2,.78,.18,1) forwards !important;
+}
+.cinematic-core{
+  backface-visibility:hidden;
+  animation:mkUnlockCore .98s cubic-bezier(.2,.78,.18,1) forwards !important;
+}
+.cinematic-logo{
+  backface-visibility:hidden;
+  animation:mkUnlockLogo .98s cubic-bezier(.2,.78,.18,1) forwards !important;
+}
+.cinematic-line{
+  width:82vw !important;
+  transform-origin:center;
+  backface-visibility:hidden;
+  animation:mkUnlockLine .98s cubic-bezier(.2,.78,.18,1) forwards !important;
+}
+.cinematic-orbit{
+  backface-visibility:hidden;
+  animation:mkUnlockOrbit .98s cubic-bezier(.2,.78,.18,1) forwards !important;
+}
+.unlock-stage.is-unlocking .home .top,
+.unlock-stage.is-unlocking .home .hero,
+.unlock-stage.is-unlocking .home .week-pulse,
+.unlock-stage.is-unlocking .home .daily-note,
+.unlock-stage.is-unlocking .home .bento{
+  backface-visibility:hidden;
+  animation:mkHomeStagger .62s cubic-bezier(.2,.78,.18,1) both !important;
+}
+.unlock-stage.is-unlocking .home .top{animation-delay:.14s !important}
+.unlock-stage.is-unlocking .home .hero{animation-delay:.18s !important}
+.unlock-stage.is-unlocking .home .week-pulse{animation-delay:.22s !important}
+.unlock-stage.is-unlocking .home .daily-note{animation-delay:.26s !important}
+.unlock-stage.is-unlocking .home .bento{animation-delay:.30s !important}
+
+@keyframes mkHomeReveal{
+  0%{opacity:.34;transform:translate3d(0,8px,0) scale(.992)}
+  55%{opacity:.72;transform:translate3d(0,3px,0) scale(.997)}
+  100%{opacity:1;transform:translate3d(0,0,0) scale(1)}
+}
+@keyframes mkUnlockOverlay{
+  0%{opacity:1;transform:translate3d(0,0,0) scale(1)}
+  58%{opacity:.88;transform:translate3d(0,0,0) scale(1.004)}
+  100%{opacity:0;transform:translate3d(0,0,0) scale(1.012)}
+}
+@keyframes mkUnlockGlow{
+  0%{opacity:.14;transform:translate3d(-8vw,5vh,0) scale(.9)}
+  52%{opacity:.46;transform:translate3d(2vw,0,0) scale(1.08)}
+  100%{opacity:0;transform:translate3d(16vw,-4vh,0) scale(1.45)}
+}
+@keyframes mkUnlockCore{
+  0%,34%{opacity:1;transform:translate3d(0,0,0) scale(1)}
+  72%{opacity:.7;transform:translate3d(0,0,0) scale(.93)}
+  100%{opacity:0;transform:translate3d(0,0,0) scale(.86)}
+}
+@keyframes mkUnlockLogo{
+  0%,28%{opacity:1;transform:translate3d(0,0,0) scale(1)}
+  66%{opacity:.84;transform:translate3d(0,0,0) scale(.72)}
+  100%{opacity:0;transform:translate3d(0,0,0) scale(.42)}
+}
+@keyframes mkUnlockLine{
+  0%,24%{opacity:0;transform:translate3d(0,0,0) scaleX(.04)}
+  52%{opacity:.82;transform:translate3d(0,0,0) scaleX(.58)}
+  100%{opacity:0;transform:translate3d(0,0,0) scaleX(1.18)}
+}
+@keyframes mkUnlockOrbit{
+  0%{opacity:0;transform:translate3d(0,0,0) scale(.82)}
+  38%{opacity:.62;transform:translate3d(0,0,0) scale(1)}
+  100%{opacity:0;transform:translate3d(0,0,0) scale(3.2)}
+}
+@keyframes mkHomeStagger{
+  0%{opacity:0;transform:translate3d(0,8px,0)}
+  100%{opacity:1;transform:translate3d(0,0,0)}
+}
+
 @media(max-width:760px){
   .bottom-nav{
     position:fixed !important;
@@ -68,4 +157,24 @@ html:not([data-theme="dark"]) .unlock-stage.is-ready .unlock-home-layer{
     width:calc(100% - 14px) !important;
     z-index:1000 !important;
   }
+  .unlock-glow{filter:blur(14px) !important}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .unlock-stage.is-unlocking .unlock-home-layer,
+  .unlock-cinematic,
+  .unlock-glow,
+  .cinematic-core,
+  .cinematic-logo,
+  .cinematic-line,
+  .cinematic-orbit,
+  .unlock-stage.is-unlocking .home .top,
+  .unlock-stage.is-unlocking .home .hero,
+  .unlock-stage.is-unlocking .home .week-pulse,
+  .unlock-stage.is-unlocking .home .daily-note,
+  .unlock-stage.is-unlocking .home .bento{
+    animation:none !important;
+  }
+  .unlock-cinematic{opacity:0 !important}
+  .unlock-stage.is-unlocking .unlock-home-layer{opacity:1 !important;transform:none !important}
 }
