@@ -42,12 +42,31 @@ html:not([data-theme="dark"]) .unlock-stage.is-ready .unlock-home-layer{
   filter:none !important;
 }
 
+/* Layer order:
+   normal content < bottom navigation < orange + button < transient menus/modals.
+   This keeps the nav always visible, while every popup can fully cover it. */
 .bottom-nav{
   position:fixed !important;
   left:50% !important;
   bottom:max(12px,env(safe-area-inset-bottom)) !important;
   transform:translateX(-50%) !important;
-  z-index:1000 !important;
+  z-index:900 !important;
+}
+
+.quick{
+  position:fixed !important;
+  z-index:1100 !important;
+}
+
+.sheet-backdrop{
+  z-index:2000 !important;
+}
+
+.sheet-backdrop .sheet,
+.sheet-backdrop .modal,
+.sheet-backdrop .quick-sheet{
+  position:relative;
+  z-index:2001 !important;
 }
 
 .app-shell{
@@ -155,7 +174,13 @@ html:not([data-theme="dark"]) .unlock-stage.is-ready .unlock-home-layer{
     bottom:max(8px,env(safe-area-inset-bottom)) !important;
     transform:translate3d(-50%,0,0) !important;
     width:calc(100% - 14px) !important;
-    z-index:1000 !important;
+    z-index:900 !important;
+  }
+  .quick{
+    z-index:1100 !important;
+  }
+  .sheet-backdrop{
+    z-index:2000 !important;
   }
   .unlock-glow{filter:blur(14px) !important}
 }
