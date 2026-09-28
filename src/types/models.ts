@@ -4,6 +4,10 @@ export type ScriptStatus = 'Da scrivere' | 'In corso' | 'Pronto';
 export type WorkflowStage = 'Lead' | 'Script' | 'Registrazione' | 'Montaggio' | 'Programmazione' | 'Pubblicato';
 export type ClientHealth = 'Regolare' | 'Attenzione' | 'Critico';
 export type EventKind = 'Lavoro' | 'Personale';
+export type LeadSalesStatus = 'Da valutare'|'Salvato'|'Contattato'|'Ha risposto'|'Interessato'|'Appuntamento fissato'|'Preventivo inviato'|'Da richiamare'|'Acquisito'|'Scartato';
+export type LeadType = 'WEB-FIRST'|'SOCIAL-FIRST';
+export type LeadBudgetBand = 'BASSA'|'MEDIA'|'ALTA'|'MOLTO ALTA';
+export type LeadPriority = 'HOT'|'MEDIUM'|'LOW';
 
 export interface BaseEntity { id: string; createdAt: string; updatedAt: string; deletedAt?: string | null; }
 export interface Client extends BaseEntity {
@@ -11,6 +15,7 @@ export interface Client extends BaseEntity {
   instagram?: string; tiktok?: string; monthlyFee: number; contentTarget: number; startDate?: string;
   contractMonths?: number; metaAds: boolean; objective?: string; tone?: string; avoid?: string[];
   platforms: Platform[];
+  address?: string; website?: string; facebook?: string; leadSourceId?: string; requestedService?: string;
 }
 export interface Idea extends BaseEntity {
   clientId?: string; title: string; note?: string; platform: Platform; format: ContentFormat;
@@ -30,12 +35,27 @@ export interface CalendarEvent extends BaseEntity {
   clientId?: string; title: string; kind: EventKind; category: string; startAt: string;
   endAt?: string; allDay?: boolean; notes?: string;
 }
+export interface LeadSource { label: string; url?: string; checkedAt?: string; }
+export interface LeadStatusEntry { status: LeadSalesStatus; at: string; note?: string; }
 export interface Lead extends BaseEntity {
   name: string; contact?: string; email?: string; phone?: string; monthlyValue: number;
   status: 'Da contattare' | 'Contattato' | 'Appuntamento' | 'Proposta inviata' | 'Acquisito' | 'Perso';
   contacted?: boolean;
   outcome?: 'OK' | 'NO' | 'Da richiamare';
   lastContactAt?: string; nextFollowUpAt?: string; notes?: string;
+
+  businessName?: string; category?: string; leadType?: LeadType; address?: string; city?: string; postcode?: string; province?: string;
+  latitude?: number; longitude?: number; distanceKm?: number; mobile?: string; website?: string; instagram?: string; facebook?: string;
+  ownerName?: string; ownerConfidence?: 'bassa'|'media'|'alta'; rating?: number; reviewsCount?: number;
+  websiteStatus?: 'Assente'|'Debole'|'Da rifare'|'Adeguato'|'E-commerce opportunity'|'Non verificato';
+  socialStatus?: 'Assenti'|'Inattivi'|'Deboli'|'Adeguati'|'Forti'|'Non verificato';
+  advertisingStatus?: 'Presente'|'Assente'|'Non verificato';
+  isNewOpening?: boolean; isOpeningSoon?: boolean;
+  fitScore?: number; needScore?: number; budgetScore?: number; budgetBand?: LeadBudgetBand; buyingScore?: number; timingScore?: number; opportunityScore?: number; priority?: LeadPriority;
+  recommendedService?: 'Nuovo sito'|'Restyling sito'|'E-commerce'|'Gestione Social Completa'|'Campagne Ads'|'Social + Sito'|'Sito + Ads'|'Social + Ads'|'Pacchetto completo';
+  upsellService?: string; aiAnalysis?: string; salesStatus?: LeadSalesStatus; statusHistory?: LeadStatusEntry[];
+  followUpDate?: string; followUpNote?: string; discoveredAt?: string; lastCheckedAt?: string; convertedClientId?: string;
+  sourceProvider?: string; sources?: LeadSource[]; externalId?: string; fingerprint?: string;
 }
 export interface Payment extends BaseEntity { clientId: string; amount: number; dueDate: string; paidAt?: string; note?: string; }
 export interface FollowerSnapshot extends BaseEntity { clientId: string; platform: 'Instagram'|'TikTok'; date: string; count: number; }
@@ -52,7 +72,7 @@ export interface FocusSession extends BaseEntity {
 export interface Habit extends BaseEntity { name: string; archived?: boolean; }
 export interface HabitCompletion extends BaseEntity { habitId: string; date: string; completed: boolean; }
 export interface RewardEntry extends BaseEntity {
-  actionKey: string; points: number; source: 'task'|'script'|'workflow'|'focus'|'habit'; label?: string;
+  actionKey: string; points: number; source: 'task'|'script'|'workflow'|'focus'|'habit'|'lead'; label?: string;
 }
 export interface Settings extends BaseEntity {
   key: 'singleton'; pinHash?: string; firstRunDone: boolean; monthlyRevenueGoal: number; clientGoal: number;
