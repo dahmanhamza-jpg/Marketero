@@ -5,7 +5,7 @@ export const LEVELS=[
   {name:'Start',min:0},{name:'Builder',min:120},{name:'Momentum',min:300},{name:'Focused',min:600},{name:'Operator',min:1000},{name:'Mastery',min:1600}
 ];
 
-export async function award(actionKey:string,points:number,source:'task'|'script'|'workflow'|'focus'|'habit',label?:string){
+export async function award(actionKey:string,points:number,source:'task'|'script'|'workflow'|'focus'|'habit'|'lead',label?:string){
   const existing=await db.rewards.where('actionKey').equals(actionKey).first();
   if(existing) return {awarded:false,points:0};
   const t=now();
