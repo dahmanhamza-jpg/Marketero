@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -58,7 +58,7 @@ function ClientEditor({client,close,afterDelete}:{client:Client;close:()=>void;a
     metaAds:!!client.metaAds
   });
 
-  async function save(e:React.FormEvent){
+  async function save(e:FormEvent){
     e.preventDefault();
     if(!v.name.trim())return;
     setSaving(true);
