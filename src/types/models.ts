@@ -74,9 +74,12 @@ export interface HabitCompletion extends BaseEntity { habitId: string; date: str
 export interface RewardEntry extends BaseEntity {
   actionKey: string; points: number; source: 'task'|'script'|'workflow'|'focus'|'habit'|'lead'; label?: string;
 }
+export interface MonthlyGoalResult { month:string; goal:number; actual:number; percent:number; }
 export interface Settings extends BaseEntity {
   key: 'singleton'; pinHash?: string; firstRunDone: boolean; monthlyRevenueGoal: number; clientGoal: number;
   darkMode: boolean; syncToken?: string; profileName?: string; dateFormat?: 'it-IT';
   notificationsEnabled?: boolean; clientReminders?: boolean; appointmentReminders?: boolean;
+  paymentReminders?: boolean; followUpReminders?: boolean; smartReminders?: boolean;
+  onboardingComplete?: boolean; workDays?: number[]; monthlyGoalMonth?: string; monthlyGoalHistory?: MonthlyGoalResult[];
   autoLockMinutes?: number; lastSyncAt?: string;
 }
