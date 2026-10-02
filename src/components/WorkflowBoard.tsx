@@ -29,8 +29,16 @@ export function WorkflowBoard({client,scripts}:{client:Client;scripts:Script[]})
     <div className='script-workflow-grid'>
       {scripts.filter(s=>!s.deletedAt).map((s,idx)=><Card className='script-production-card' key={s.id}>
         <div className='script-card-head'><div><span className='script-index'>VIDEO {String(idx+1).padStart(2,'0')}</span><h3>{s.title}</h3><p>{s.platform} · {s.format}</p></div><ProgressRing value={scriptProgress(s)} size={66}/></div>
-        <div className='stepper'><div className='workflow-step done'><Check/><span>Script</span></div>{workflowKeys.map(key=><button key={key} className={'workflow-step '+(s[key]?'done':'')} onClick={()=>toggle(s,key)} aria-pressed={!!s[key]}>{s[key]?<Check/>:<Circle/>}<span>{workflowMeta[key].label}</span></button>)}</div>
-        <div className='script-card-actions'><Link className='btn soft' to={'/focus?script='+s.id+'&stage=Montaggio&label='+encodeURIComponent('Montaggio · '+s.title)}><TimerReset/> Focus 25</Link></div>
+        <div className='workflow-stage-strip' role='group' aria-label={'Workflow '+s.title}>
+          <div className='workflow-stage-unit is-done is-static'><span className='workflow-stage-dot'><Check/></span><small>Script</small></div>
+          {workflowKeys.map(key=>{
+            const done=!!s[key];
+            return <button key={key} type='button' className={'workflow-stage-unit '+(done?'is-done':'')} onClick={()=>toggle(s,key)} aria-pressed={done} aria-label={(done?'Segna come non completato: ':'Segna come completato: ')+workflowMeta[key].label} title={workflowMeta[key].label}>
+              <span className='workflow-stage-dot'>{done?<Check/>:<Circle/>}</span><small>{workflowMeta[key].label}</small>
+            </button>;
+          })}
+        </div>
+        <div className='script-card-actions'><Link className='btn soft compact-action' to={'/focus?script='+s.id+'&stage=Montaggio&label='+encodeURIComponent('Montaggio · '+s.title)}><TimerReset/> Focus 25</Link></div>
       </Card>)}
     </div>
   </div>;
