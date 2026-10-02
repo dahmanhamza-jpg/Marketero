@@ -40,7 +40,7 @@ export const now = () => new Date().toISOString();
 export async function ensureSettings(){
   let s = await db.settings.get('settings');
   if(!s){
-    s={id:'settings',key:'singleton',createdAt:now(),updatedAt:now(),firstRunDone:false,monthlyRevenueGoal:5000,clientGoal:10,darkMode:false,dateFormat:'it-IT',notificationsEnabled:true,clientReminders:true,appointmentReminders:true,autoLockMinutes:15};
+    s={id:'settings',key:'singleton',createdAt:now(),updatedAt:now(),firstRunDone:false,monthlyRevenueGoal:5000,clientGoal:10,darkMode:false,dateFormat:'it-IT',notificationsEnabled:true,clientReminders:true,appointmentReminders:true,paymentReminders:true,followUpReminders:true,smartReminders:true,onboardingComplete:false,workDays:[1,2,3,4,5],monthlyGoalHistory:[],autoLockMinutes:15};
     await db.settings.put(s);
   }
   return s;
