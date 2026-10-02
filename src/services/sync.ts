@@ -5,6 +5,10 @@ const SYNC_CODE_RE=/^[a-f0-9]{64}$/;
 let syncing=false;
 let queued:number|undefined;
 
+function emitSync(state:'syncing'|'synced'|'offline'|'error'){
+  try{window.dispatchEvent(new CustomEvent('marketero:sync',{detail:{state,at:new Date().toISOString()}}))}catch{}
+}
+
 export async function ensureSyncToken(){
   const s=await db.settings.get('settings');
   if(!s) throw new Error('Impostazioni mancanti');
@@ -39,7 +43,8 @@ export async function importAll(payload:any){
 }
 export async function syncRemote(){
   if(syncing) return {ok:true};
-  syncing=true;
+  if(!navigator.onLine){emitSync('offline');throw new Error('Nessuna connessione al server di sincronizzazione');}
+  syncing=true;emitSync('syncing');
   try{
     const token=await ensureSyncToken();
     const payload=await exportAll();
@@ -49,16 +54,19 @@ export async function syncRemote(){
     if(!r.ok){const detail=(await r.text()).trim();throw new Error(detail?`Sincronizzazione non riuscita (${r.status}): ${detail}`:`Sincronizzazione non riuscita (${r.status})`);}
     const merged=await r.json(); if(merged?.data) await importAll(merged);
     await db.settings.update('settings',{lastSyncAt:new Date().toISOString()});
+    emitSync('synced');
     return {ok:true};
-  }finally{syncing=false;}
+  }catch(error){emitSync(navigator.onLine?'error':'offline');throw error;}
+  finally{syncing=false;}
 }
 export function queueSync(delay=650){if(queued)window.clearTimeout(queued);queued=window.setTimeout(()=>syncRemote().catch(()=>{}),delay);}
 export async function resetRemote(){const token=await ensureSyncToken();const r=await fetch('/api/sync',{method:'DELETE',headers:{authorization:`Bearer ${token}`}});if(!r.ok)throw new Error('Reset remoto non riuscito');}
 export function startAutoSync(){
-  syncRemote().catch(()=>{});
+  if(!navigator.onLine)emitSync('offline');else syncRemote().catch(()=>{});
   const interval=window.setInterval(()=>syncRemote().catch(()=>{}),15000);
   const visibilityHandler=()=>{if(document.visibilityState==='visible')syncRemote().catch(()=>{});};
   const onlineHandler=()=>syncRemote().catch(()=>{});
-  document.addEventListener('visibilitychange',visibilityHandler);window.addEventListener('online',onlineHandler);
-  return()=>{window.clearInterval(interval);document.removeEventListener('visibilitychange',visibilityHandler);window.removeEventListener('online',onlineHandler);};
+  const offlineHandler=()=>emitSync('offline');
+  document.addEventListener('visibilitychange',visibilityHandler);window.addEventListener('online',onlineHandler);window.addEventListener('offline',offlineHandler);
+  return()=>{window.clearInterval(interval);document.removeEventListener('visibilitychange',visibilityHandler);window.removeEventListener('online',onlineHandler);window.removeEventListener('offline',offlineHandler);};
 }
