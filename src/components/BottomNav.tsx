@@ -2,6 +2,7 @@ import { createPortal } from 'react-dom';
 import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Home, Users, CalendarDays, MoreHorizontal, TimerReset, Eye, EyeOff } from 'lucide-react';
+import { SmartLayer } from './SmartLayer';
 
 const REVENUE_VISIBILITY_KEY='marketero:revenue-visible';
 
@@ -39,6 +40,7 @@ export function BottomNav(){
   };
 
   return <>
+    <SmartLayer/>
     {clientsOverview&&revenueHost&&createPortal(<span
       className="revenue-privacy-toggle"
       role="button"
