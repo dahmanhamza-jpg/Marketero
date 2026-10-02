@@ -1,0 +1,72 @@
+/* Final interaction polish: compact flags, cleaner Altro, client management. */
+
+/* --- Client management --- */
+.client-hero{position:relative}
+.client-manage-trigger{
+  position:absolute;top:14px;right:14px;z-index:7;width:42px;height:42px;border-radius:50%;
+  border:1px solid rgba(30,24,20,.10);background:rgba(235,230,224,.92);color:#211b18;
+  display:grid;place-items:center;box-shadow:0 9px 24px rgba(31,24,18,.10);backdrop-filter:blur(14px);
+  transition:transform .16s ease,background .16s ease
+}
+.client-manage-trigger:hover{background:#f0ebe5}.client-manage-trigger:active{transform:scale(.94)}.client-manage-trigger svg{width:17px;height:17px}
+.client-editor-overlay{position:fixed;inset:0;z-index:3200;background:rgba(19,16,14,.44);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);display:flex;align-items:flex-end;justify-content:center;padding:12px}
+.client-editor{width:min(720px,100%);max-height:min(92vh,880px);overflow:auto;background:linear-gradient(155deg,#eee9e3,#d7d0c8);border:1px solid rgba(255,255,255,.32);border-radius:32px;box-shadow:0 34px 100px rgba(27,20,16,.30);padding:22px}
+.client-editor-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}.client-editor-head h2{margin:.25rem 0 .35rem;font-size:clamp(1.8rem,5vw,2.8rem);font-weight:590;letter-spacing:-.05em}.client-editor-head p{margin:0;color:var(--mk-muted);font-size:.8rem;line-height:1.45}.client-editor-close{width:42px;height:42px;border-radius:50%;border:1px solid var(--mk-line);background:rgba(40,32,27,.06);display:grid;place-items:center;flex:0 0 auto}.client-editor-close svg{width:18px}
+.client-editor-form{display:grid;gap:14px}.client-editor-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}.client-editor-form label{display:grid;gap:6px;font-size:.76rem;font-weight:700;color:#5b534c}.client-editor-form input{width:100%;min-height:48px;border:1px solid var(--mk-line);border-radius:16px;background:rgba(255,255,255,.48);padding:12px 13px;color:var(--mk-ink);outline:0}.client-editor-form input:focus{border-color:rgba(185,82,32,.48);box-shadow:0 0 0 4px rgba(185,82,32,.07)}
+.client-editor-check{grid-template-columns:30px 1fr!important;align-items:center!important;border:1px solid var(--mk-line);border-radius:17px;padding:10px 12px;background:rgba(255,255,255,.28)}.client-editor-check>span{display:grid;gap:2px}.client-editor-check small{font-weight:500;color:var(--mk-muted)}
+.client-editor-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}.client-editor-actions .btn svg{width:16px}
+.client-danger-zone{margin-top:20px;padding-top:18px;border-top:1px solid rgba(120,45,37,.15)}.client-delete-button{width:100%;border:1px solid rgba(133,54,45,.15);border-radius:18px;background:rgba(139,60,51,.055);color:#7b3932;padding:13px;display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:center;text-align:left}.client-delete-button>svg{width:19px}.client-delete-button>span{display:grid;gap:2px}.client-delete-button small{font-size:.68rem;font-weight:500;color:#8b625d}.client-delete-confirm{display:grid;grid-template-columns:34px 1fr;gap:10px;padding:14px;border-radius:18px;background:rgba(139,60,51,.07);color:#6f332d}.client-delete-confirm>svg{width:20px;margin-top:2px}.client-delete-confirm p{color:#7e5d58;font-size:.75rem;line-height:1.45;margin:5px 0 12px}.client-delete-confirm>div>div{display:flex;gap:8px;flex-wrap:wrap}
+
+/* --- Compact, round workflow flags --- */
+.workflow-stage-strip{display:grid;grid-template-columns:repeat(5,minmax(52px,1fr));gap:6px;align-items:start;padding:3px 0}
+.workflow-stage-unit{border:0!important;background:transparent!important;padding:0!important;min-height:68px!important;display:grid!important;grid-template-rows:44px auto;justify-items:center;align-items:start;gap:5px;color:var(--text-secondary);font-weight:680;min-width:0}
+.workflow-stage-unit small{font-size:.61rem;line-height:1.12;text-align:center;white-space:normal;color:var(--text-muted);max-width:76px}
+.workflow-stage-dot{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;border:1px solid rgba(32,25,21,.14);background:rgba(255,255,255,.32);box-shadow:inset 0 1px rgba(255,255,255,.55);transition:transform .16s ease,background .16s ease,border-color .16s ease,box-shadow .16s ease}
+.workflow-stage-dot svg{width:17px;height:17px;color:#817971}.workflow-stage-unit:not(.is-static):active .workflow-stage-dot{transform:scale(.91)}
+.workflow-stage-unit.is-done .workflow-stage-dot{background:linear-gradient(145deg,#8f3c16,#bd5b27);border-color:transparent;box-shadow:0 7px 16px rgba(112,44,17,.22),inset 0 1px rgba(255,255,255,.14)}
+.workflow-stage-unit.is-done .workflow-stage-dot svg{color:#fff;stroke-width:3}.workflow-stage-unit.is-done small{color:#5a3524;font-weight:780}.workflow-stage-unit.is-static .workflow-stage-dot{background:linear-gradient(145deg,#27211d,#171513)}.workflow-stage-unit.is-static small{color:var(--text-secondary)}
+.compact-action{min-height:38px!important;padding:8px 12px!important;font-size:.74rem}.compact-action svg{width:15px!important}
+
+/* --- Round, unambiguous flags and checkboxes --- */
+.setting-row input[type="checkbox"],.notification-choice input[type="checkbox"],.lead-check input[type="checkbox"],.client-editor-check input[type="checkbox"]{
+  appearance:none!important;-webkit-appearance:none!important;width:27px!important;height:27px!important;min-height:27px!important;min-width:27px!important;padding:0!important;margin:0!important;border-radius:50%!important;border:1px solid rgba(31,25,21,.18)!important;background:rgba(255,255,255,.42)!important;box-shadow:inset 0 1px rgba(255,255,255,.6)!important;cursor:pointer;transition:transform .15s ease,background .15s ease,border-color .15s ease!important
+}
+.setting-row input[type="checkbox"]:checked,.notification-choice input[type="checkbox"]:checked,.lead-check input[type="checkbox"]:checked,.client-editor-check input[type="checkbox"]:checked{
+  background:#211b18 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12 4 4L19 6'/%3E%3C/svg%3E") center/14px 14px no-repeat!important;border-color:#211b18!important;box-shadow:0 6px 13px rgba(25,20,17,.16)!important
+}
+.setting-row input[type="checkbox"]:active,.notification-choice input[type="checkbox"]:active,.lead-check input[type="checkbox"]:active,.client-editor-check input[type="checkbox"]:active{transform:scale(.9)}
+
+/* --- Altro: calmer, spaced, structured --- */
+.settings-grid{gap:18px!important;align-items:start}
+.settings-grid>.card{display:flex;flex-direction:column;gap:14px;padding:22px!important;overflow:visible}
+.settings-grid>.card>h3{margin:0 0 2px;font-size:1.18rem;font-weight:620;letter-spacing:-.025em}
+.settings-grid>.card>p{margin:0;line-height:1.5;font-size:.79rem}
+.settings-grid>.card:first-child>div.setting-row{display:none!important}
+.settings-grid .setting-row{border:0!important;margin:0;padding:12px 13px!important;min-height:52px;border-radius:16px;background:rgba(255,255,255,.27);display:flex;align-items:center;justify-content:space-between;gap:14px}
+.settings-grid .setting-row>span{font-size:.79rem;font-weight:680;color:#49423c}
+.settings-grid .setting-row>input:not([type="checkbox"]){max-width:62%;min-height:42px!important;background:rgba(255,255,255,.42)!important}
+.settings-grid>.card>label:not(.setting-row):not(.file-btn){display:grid;gap:7px;margin:0;font-size:.72rem;font-weight:700;color:#615850}
+.settings-grid>.card>label:not(.setting-row):not(.file-btn)>input{min-height:46px!important;margin:0!important}
+.settings-grid>.card>.btn,.settings-grid>.card>.file-btn{align-self:flex-start;margin:0!important;min-height:40px;padding:9px 13px;font-size:.74rem}
+.settings-grid>.card:nth-child(4){gap:16px;background:linear-gradient(145deg,rgba(232,226,220,.9),rgba(213,205,197,.78))}
+.settings-grid>.card:nth-child(4)>p:nth-of-type(2){padding:11px 12px;border-radius:15px;background:rgba(255,255,255,.26);font-size:.72rem}
+.settings-grid>.card:nth-child(4)>label input{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.68rem;letter-spacing:.02em}
+.settings-grid>.card:nth-child(5) .danger-zone{margin-top:6px;padding-top:16px}
+.settings-grid>.card:nth-child(5) .danger-zone .btn{min-height:38px;padding:8px 12px;font-size:.72rem}
+.settings-grid>.card.card-link{min-height:132px;justify-content:flex-end;gap:6px}
+.settings-grid>.card.card-link h3{margin:.25rem 0;font-size:1.25rem}.settings-grid>.card.card-link p{margin:0}
+
+/* Keep smart status separated from page chrome. */
+.smart-tools{gap:8px!important}.smart-sync{margin-left:2px}
+
+@media(max-width:760px){
+  .client-editor-overlay{padding:0}.client-editor{border-radius:30px 30px 0 0;padding:18px;max-height:94vh}.client-editor-grid{grid-template-columns:1fr}.client-editor-actions{position:sticky;bottom:-18px;background:linear-gradient(transparent,#d7d0c8 35%);padding:22px 0 14px;margin-bottom:-14px}.client-editor-actions .btn{flex:1}
+  .client-manage-trigger{top:12px;right:12px;width:40px;height:40px}
+  .workflow-stage-strip{grid-template-columns:repeat(5,minmax(48px,1fr));gap:3px}.workflow-stage-dot{width:40px;height:40px}.workflow-stage-unit{grid-template-rows:42px auto;min-height:64px!important}.workflow-stage-unit small{font-size:.56rem}
+  .settings-grid{gap:14px!important}.settings-grid>.card{padding:18px!important;gap:13px}.settings-grid .setting-row{padding:11px 12px!important}.settings-grid .setting-row>input:not([type="checkbox"]){max-width:58%}.settings-grid>.card:nth-child(4){gap:15px}
+}
+
+@media(max-width:390px){
+  .workflow-stage-strip{overflow-x:auto;grid-template-columns:repeat(5,58px);justify-content:start;padding-bottom:4px}.workflow-stage-unit small{max-width:58px}
+  .settings-grid .setting-row{align-items:center}.settings-grid .setting-row>span{font-size:.75rem}
+}
